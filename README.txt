@@ -1,4 +1,4 @@
-In order to clean the dataset we reduced it to a few genes to analyse,
-based on their mean expression, variance, variability, and 
-biolgical relevance.
-
+Project Contributors:
+student ids and matching GitHub usernames
+include a direct link to your presentation
+how to get the data: link to paper and dataset
