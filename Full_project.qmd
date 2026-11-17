@@ -1,0 +1,99 @@
+---
+title: "Full_project"
+format: html
+---
+
+1. General
+
+```{r}
+library(tidyverse)
+
+# 1. Read the file as text (semicolon-separated, CRLF line endings)
+raw_read <- read_delim(
+  file = "_raw/GSE162746_Raw_counts_collected.csv.gz",
+  delim = ";",
+  col_types = cols(.default = col_character())
+)
+problems(raw_read)                 # should be empty
+
+raw <- raw_read |>
+  rename(row_id = 1)               # first header is blank; give it a name
+
+# 2. Sample metadata: first three rows hold time, stimulus and donor
+meta_rows <- c("time", "stimu", "sample")
+
+sample_info <- raw |>
+  filter(row_id %in% meta_rows) |>
+  pivot_longer(-row_id, names_to = "sample_id", values_to = "value") |>
+  pivot_wider(names_from = row_id, values_from = value) |>
+  mutate(across(everything(), str_trim)) |>
+  rename(stimulus = stimu, donor = sample) |>
+  mutate(
+    stimulus = recode(stimulus,
+      "RPMI"                  = "unstimulated",
+      "Candida-albicans"      = "C_albicans",
+      "Aspergillus-fumigatus" = "A_fumigatus",
+      "Rhizopus-oryzae"       = "R_oryzae"),
+    time = factor(time, levels = c("4h", "24h"))
+  )
+
+# 3. Gene count matrix: keep only Ensembl gene rows
+counts <- raw |>
+  filter(str_starts(row_id, "ENSG")) |>
+  rename(gene_id = row_id) |>
+  mutate(across(-gene_id, ~ as.integer(str_trim(.x))))
+
+stopifnot(!anyDuplicated(counts$gene_id), !anyNA(counts))
+
+# 4. Select Candida and RPMI, and give each sample a readable name
+selected <- sample_info |>
+  filter(stimulus %in% c("C_albicans", "unstimulated")) |>
+  mutate(group = if_else(stimulus == "C_albicans", "Candida", "RPMI")) |>
+  arrange(group, time, donor) |>
+  group_by(group) |>
+  mutate(
+    sample_no = row_number(),
+    new_name  = paste0("Sample", sample_no, "_", group)
+  ) |>
+  ungroup()
+
+# 5. Metadata tables, one per group
+candida_meta <- selected |>
+  filter(group == "Candida") |>
+  select(sample_id, time, donor, new_name)
+
+rpmi_meta <- selected |>
+  filter(group == "RPMI") |>
+  select(sample_id, time, donor, new_name)
+
+print(candida_meta, n = 20)
+print(rpmi_meta, n = 20)
+
+# 6. Count matrix with the readable column names
+counts_named <- counts |>
+  select(gene_id, all_of(selected$sample_id)) |>
+  rename_with(
+    ~ selected$new_name[match(.x, selected$sample_id)],
+    .cols = -gene_id
+  )
+
+# 7. Save
+dir.create("data_clean", showWarnings = FALSE)
+write_csv(counts_named, "data_clean/counts_candida_rpmi.csv")
+write_csv(candida_meta, "data_clean/metadata_candida.csv")
+write_csv(rpmi_meta,    "data_clean/metadata_rpmi.csv")
+write_csv(selected,     "data_clean/metadata_all_selected.csv")
+```
+
+
+2. Martina
+
+
+
+3. Anastasia 
+
+4. Greta
+
+5. Teo
+
+
