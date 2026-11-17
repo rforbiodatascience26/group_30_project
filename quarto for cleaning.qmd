@@ -1,0 +1,18 @@
+---
+title: "General_analysis"
+author: "Martina"
+format: html
+editor: visual
+---
+
+**1. Genes with zero counts in every sample**
+
+This gene has no detected transcripts in your dataset.
+
+It might genuinely not be expressed in these cells, or its expression might be below the sequencing detection limit.
+
+Keeping thousands of genes like this generally adds little to an exploratory expression analysis because you cannot calculate meaningful differences in expression between conditions.
+
+```{r}
+
+```
