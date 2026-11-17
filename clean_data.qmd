@@ -70,39 +70,28 @@ head(metadata)
 
 ```{r}
 #Lets change how the Stimulus is written for easier further analysis using _ instead of -, RPMI - is control group
-metadata <- mutate(metadata,
-  Stimulus = recode(Stimulus,
-    "RPMI"                  = "Control_group",
-    "Candida-albicans"      = "C_albicans",
-    "Aspergillus-fumigatus" = "A_fumigatus",
-    "Rhizopus-oryzae"       = "R_oryzae"
-  ) 
-)
+metadata <- metadata |>
+  mutate(across(everything(), str_trim)) |>
+  mutate(
+    Stimulus = recode(Stimulus,
+      "RPMI"                  = "Control_group",
+      "Candida-albicans"      = "C_albicans",
+      "Aspergillus-fumigatus" = "A_fumigatus",
+      "Rhizopus-oryzae"       = "R_oryzae"),
+    Time = factor(Time, levels = c("4h", "24h"))
+  )
 
 head(metadata)
 ```
+### Table 2 Gene count matrix
+ 
+
 ```{r}
 
 ```
 
 
-# 2. Sample metadata: first three rows hold time, stimulus and donor
-meta_rows <- c("time", "stimu", "sample")
 
-sample_info <- raw |>
-  filter(row_id %in% meta_rows) |>
-  pivot_longer(-row_id, names_to = "sample_id", values_to = "value") |>
-  pivot_wider(names_from = row_id, values_from = value) |>
-  mutate(across(everything(), str_trim)) |>
-  rename(stimulus = stimu, donor = sample) |>
-  mutate(
-    stimulus = recode(stimulus,
-      "RPMI"                  = "unstimulated",
-      "Candida-albicans"      = "C_albicans",
-      "Aspergillus-fumigatus" = "A_fumigatus",
-      "Rhizopus-oryzae"       = "R_oryzae"),
-    time = factor(time, levels = c("4h", "24h"))
-  )
 
 # 3. Gene count matrix: keep only Ensembl gene rows
 counts <- raw |>
