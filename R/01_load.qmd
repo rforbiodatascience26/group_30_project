@@ -2,7 +2,9 @@
 title: "01_load_dataset"
 format: html
 ---
+
 Load tydiverse package
+
 ```{r}
 #| echo: True
 #| eval: False 
@@ -10,9 +12,11 @@ library(tidyverse)
 ```
 
 Retrieve and load the dataset
+
 ```{r}
 #| echo: True
 #| eval: False
+
 raw_dir <- "../data/_raw"
 data_file <- "GSE162746_Raw_counts_collected.csv.gz"
 data_path <- file.path(raw_dir, data_file)
@@ -27,12 +31,17 @@ if (!dir.exists(raw_dir)) {
 # Download only if the file doesn't exist
 if (!file.exists(data_path)) {
   download.file(
-    url = paste0(data_loc, data_file),
+    url = str_c(data_loc, data_file),
     destfile = data_path,
     mode = "wb"
   )
 }
 
-# Load dataset
-counts <- read_csv(data_path)
+# Import raw dataset
+raw_data <- read_delim(
+  data_path,
+  delim = ";",
+  col_types = cols(.default = col_character())
+)
+
 ```
