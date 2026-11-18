@@ -71,12 +71,12 @@ counts <- raw_data |>
 ```{r}
 #Any missing value?
 metadata |>
-  summarise(across(everything(), ~ sum(is.na(.x))))
-```
-
-```{r}
-counts |>
-  summarise(across(everything(), ~ sum(is.na(.x))))
+  summarise(
+    missing_sample_id = sum(is.na(sample_id)),
+    missing_time = sum(is.na(time)),
+    missing_stimu = sum(is.na(stimu)),
+    missing_donor = sum(is.na(donor))
+  )
 ```
 
 ```{r}
