@@ -1,0 +1,119 @@
+---
+title: "clean_data"
+format: html
+editor: visual
+---
+
+## Loading necessery libraries
+
+```{r}
+library(tidyverse)
+library(readr)
+```
+
+## Uploading raw data:
+
+```{r}
+raw_data <- read_csv("_raw/GSE162746_Raw_counts_collected.csv")
+head(raw_data)
+```
+
+## Data cleaning
+
+### Table 1 metadata
+
+#### This table will contain all the samples experimental conditions.
+
+```{r}
+#Metadata is in the first 4 rows of the original data
+metadata <- raw_data[1:4, 1:ncol(raw_data)]
+head(metadata)
+```
+
+```{r}
+#Lets rename the 1 column, later we will transpose the table:
+metadata[1,1] <- "Sequence_ID"
+metadata[2,1] <- "Time"
+metadata[3,1] <- "Stimulus"
+metadata[4,1] <- "Donor"
+metadata
+```
+
+```{r}
+#Lets create names for the columns - original id for smaples so sample_1......sample_last_column_number
+colnames(metadata) <- c(
+  "Samples",
+  paste0("sample_", 1:(ncol(raw_data) - 1))
+)
+metadata
+
+```
+
+```{r}
+#Lets transpose the data and use first row as header:
+metadata <- as.data.frame(t(metadata))
+
+# Check the result
+head(metadata)
+
+```
+
+```{r}
+# Assign first row as column names
+colnames(metadata) <- as.character(metadata[1, ])
+metadata <- tibble::rownames_to_column(metadata, var = "Samples")
+
+# Remove first row
+metadata <- metadata[-1, ]
+head(metadata)
+```
+
+```{r}
+#Lets change how the Stimulus is written for easier further analysis using _ instead of -, RPMI - is control group
+metadata <- metadata |>
+  mutate(across(everything(), str_trim)) |>
+  mutate(
+    Stimulus = recode(Stimulus,
+      "RPMI"                  = "Control_group",
+      "Candida-albicans"      = "C_albicans",
+      "Aspergillus-fumigatus" = "A_fumigatus",
+      "Rhizopus-oryzae"       = "R_oryzae"),
+    Time = factor(Time, levels = c("4h", "24h"))
+  )
+
+head(metadata)
+```
+
+### Table 2 Gene count matrix
+
+#STILL NEEDS TO BE DONE
+
+```{r}
+
+```
+
+# 3. Gene count matrix: keep only Ensembl gene rows
+
+counts \<- raw \|\> filter(str_starts(row_id, "ENSG")) \|\> rename(gene_id = row_id) \|\> mutate(across(-gene_id, \~ as.integer(str_trim(.x))))
+
+stopifnot(!anyDuplicated(counts\$gene_id), !anyNA(counts))
+
+# 4. Select Candida and RPMI, and give each sample a readable name
+
+selected \<- sample_info \|\> filter(stimulus %in% c("C_albicans", "unstimulated")) \|\> mutate(group = if_else(stimulus == "C_albicans", "Candida", "RPMI")) \|\> arrange(group, time, donor) \|\> group_by(group) \|\> mutate( sample_no = row_number(), new_name = paste0("Sample", sample_no, "\_", group) ) \|\> ungroup()
+
+# 5. Metadata tables, one per group
+
+candida_meta \<- selected \|\> filter(group == "Candida") \|\> select(sample_id, time, donor, new_name)
+
+rpmi_meta \<- selected \|\> filter(group == "RPMI") \|\> select(sample_id, time, donor, new_name)
+
+print(candida_meta, n = 20) print(rpmi_meta, n = 20)
+
+# 6. Count matrix with the readable column names
+
+counts_named \<- counts \|\> select(gene_id, all_of(selected$sample_id)) |> rename_with( ~ selected$new_name\[match(.x, selected\$sample_id)\], .cols = -gene_id )
+
+# 7. Save
+
+dir.create("data_clean", showWarnings = FALSE) write_csv(counts_named, "data_clean/counts_candida_rpmi.csv") write_csv(candida_meta, "data_clean/metadata_candida.csv") write_csv(rpmi_meta, "data_clean/metadata_rpmi.csv") write_csv(selected, "data_clean/metadata_all_selected.csv") \`\`\`
