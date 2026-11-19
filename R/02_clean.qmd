@@ -4,8 +4,11 @@ format: html
 ---
 
 # Description of data variables:
-
-
+Sequencing identifier associated with the sequencing samples. They look like sequencing run and barcode information
+Time (4h and 24h) 
+Stimulation (Candita/ Aspergillus / Rhizopus / RPMI(control group))
+Samples (8 samples that represent 8 biological replicates/ 8 different human donours)
+Gene expression data (The nymbers represent the number of sequencing reads assigned to each gene in each sample)
 
 ```{r}
 library(tidyverse)
