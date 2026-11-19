@@ -112,7 +112,7 @@ print(candida_meta, n = 20) print(rpmi_meta, n = 20)
 
 # 6. Count matrix with the readable column names
 
-counts_named \<- counts \|\> select(gene_id, all_of(selected$sample_id)) |>  rename_with(  ~ selected$new_name\[match(.x, selected\$sample_id)\], .cols = -gene_id )
+counts_named \<- counts \|\> select(gene_id, all_of(selected$sample_id)) |> rename_with( ~ selected$new_name\[match(.x, selected\$sample_id)\], .cols = -gene_id )
 
 # 7. Save
 
