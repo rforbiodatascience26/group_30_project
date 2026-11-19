@@ -3,18 +3,12 @@ title: "02_clean"
 format: html
 ---
 
-Load the dataset
+# Description of data variables:
+
+
 
 ```{r}
-raw_dir <- "../data/_raw"
-data_file <- "GSE162746_Raw_counts_collected.csv.gz"
-data_path <- file.path(raw_dir, data_file)
-
-raw_data <- read_delim(
-  data_path,
-  delim = ";",
-  col_types = cols(.default = col_character())
-)
+library(tidyverse)
 ```
 
 Inspect the dataset
@@ -55,10 +49,28 @@ metadata <- metadata_long |>
     names_from = parameter,
     values_from = value
   ) |>
-  rename(donor = sample)
+  rename(donor = sample) |>
+  rename(stimulus = stimu)
 ```
 
-4\) Get just the mrna counts
+4\) Renaming Stimulus column
+
+```{r}
+metadata <- metadata |> 
+  mutate(
+    stimulus = recode(stimulus,
+      "RPMI"                  = "Control_group",
+      "Candida-albicans"      = "C_albicans",
+      "Aspergillus-fumigatus" = "A_fumigatus",
+      "Rhizopus-oryzae"       = "R_oryzae"),
+    time = factor(time, levels = c("4h", "24h"))
+  )
+
+head(metadata)
+```
+
+
+5\) Get just the mrna counts
 
 ```{r}
 counts <- raw_data |>
@@ -66,7 +78,7 @@ counts <- raw_data |>
   filter(str_starts(gene_id, "ENSG"))
 ```
 
-5\) Quality check
+6\) Quality check
 
 ```{r}
 #Any missing value?
@@ -97,4 +109,45 @@ metadata |>
 # Check donor distribution
 metadata |>
   count(donor)
+```
+
+6\) More about quality control
+
+```{r}
+# Check duplicated gene IDs
+counts |>
+  count(gene_id) |>
+  filter(n > 1)
+```
+
+```{r}
+# Check missing values in count columns
+counts |>
+  summarise(across(-gene_id, ~ sum(is.na(.x))))
+```
+
+```{r}
+# Identify genes with zero counts
+# Calculate total counts per gene
+counts <- counts |>
+  mutate(across(-gene_id, as.integer))
+counts <- counts |>
+  mutate(total_counts = rowSums(across(-gene_id)))
+```
+
+```{r}
+# filter the samples with 0 counts:
+ # these genes that have no reads assigned to them in any sample
+counts |>
+  filter(total_counts == 0)
+
+```
+
+```{r}
+# how many genes? 
+counts |>
+  summarise(
+    total_genes = n(),
+    zero_count_genes = sum(total_counts == 0)
+  )
 ```
