@@ -3,10 +3,11 @@ title: "03_augment_general"
 format: html
 ---
 
-Load metadata
+Load metadata and mRNA counts
 
 ```{r}
 metadata <- read_csv("../data/metadata.csv")
+counts <- read_csv("../data/counts.csv")
 ```
 
 3a. Normalising and transforming the counts

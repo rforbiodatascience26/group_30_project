@@ -74,6 +74,11 @@ metadata <- metadata |>
 
 head(metadata)
 ```
+Save the metadata
+```{r}
+write_csv(metadata, "../data/metadata.csv")
+
+```
 
 5\) Get just the mrna counts
 
@@ -82,6 +87,13 @@ counts <- raw_data |>
   rename(gene_id = ...1) |>
   filter(str_starts(gene_id, "ENSG"))
 ```
+
+Save the counts
+
+```{r}
+write_csv(counts, "../data/counts.csv")
+```
+
 
 6\) Quality check
 
