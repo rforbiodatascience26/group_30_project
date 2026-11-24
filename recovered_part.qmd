@@ -1,0 +1,561 @@
+---
+title: "04_analysis"
+format: html
+editor: visual
+---
+
+```{r}
+#| echo: False
+library(tidyverse)
+library(readr)
+library(DESeq2)
+```
+
+Retrieve and load the dataset
+
+```{r}
+#| echo: false
+
+raw_dir <- "../data/_raw"
+data_file <- "GSE162746_Raw_counts_collected.csv.gz"
+data_path <- file.path(raw_dir, data_file)
+
+data_loc <- "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE162nnn/GSE162746/suppl/"
+
+# Create directory if it doesn't exist
+if (!dir.exists(raw_dir)) {
+  dir.create(raw_dir, recursive = TRUE)
+}
+
+# Download only if the file doesn't exist
+if (!file.exists(data_path)) {
+  download.file(
+    url = str_c(data_loc, data_file),
+    destfile = data_path,
+    mode = "wb"
+  )
+}
+
+# Import raw dataset
+raw_data <- read_delim(
+  data_path,
+  delim = ";",
+  col_types = cols(.default = col_character())
+)
+
+```
+
+# Description of data variables:
+
+Sequencing identifier associated with the sequencing samples. They look like sequencing run and barcode information Time (4h and 24h) Stimulation (Candita/ Aspergillus / Rhizopus / RPMI(control group)) Samples (8 samples that represent 8 biological replicates/ 8 different human donours) Gene expression data (The nymbers represent the number of sequencing reads assigned to each gene in each sample)
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+#Inspect the dataset
+#View(raw_data)
+```
+
+Tidy the dataset:
+
+1\) Extract sample metadata
+
+```{r}
+metadata_raw <- as.data.frame(raw_data)
+names(metadata_raw)[1] <- "parameter"
+metadata_raw <- metadata_raw[1:3, ]  # extract first 3 row with all metadata
+```
+
+2\) Transform the metadata from wide format to long format
+
+```{r}
+metadata_long <- metadata_raw |>
+  pivot_longer(
+    cols = -parameter,
+    names_to = "sample_id",
+    values_to = "value"
+  )
+# reorder metadata_long
+metadata_long <- metadata_long |>
+  select(sample_id, parameter, value)
+```
+
+3\) Back to wide, to have one row per sample
+
+```{r}
+metadata <- metadata_long |>
+  pivot_wider(
+    names_from = parameter,
+    values_from = value
+  )
+
+metadata <- metadata |>
+  rename_with(~ "donor", "sample") |>
+  rename_with(~ "stimulus", "stimu")
+```
+
+4\) Renaming Stimulus column
+
+```{r}
+metadata <- metadata |> 
+  mutate(
+    stimulus = recode(stimulus,
+      "RPMI"                  = "Control_group",
+      "Candida-albicans"      = "C_albicans",
+      "Aspergillus-fumigatus" = "A_fumigatus",
+      "Rhizopus-oryzae"       = "R_oryzae"),
+    time = factor(time, levels = c("4h", "24h"))
+  )
+
+head(metadata)
+```
+
+5\) Get just the mrna counts
+
+```{r}
+counts <- as.data.frame(raw_data)
+names(counts)[1] <- "gene_id"
+
+counts <- counts |>
+  filter(str_starts(gene_id, "ENSG"))
+```
+
+6\) Quality check
+
+```{r}
+#Any missing value?
+metadata |>
+  summarise(
+    missing_sample_id = sum(is.na(sample_id)),
+    missing_time = sum(is.na(time)),
+    missing_stimu = sum(is.na(stimulus)),
+    missing_donor = sum(is.na(donor))
+  )
+```
+
+# Analysis of Candida albicans versus control group
+
+```{r}
+head(metadata)
+```
+
+```{r}
+#Not done due to the size
+#head(counts)
+```
+
+## From the two main datatables pulling only the data necesery for analysis:
+
+#Table 1
+
+1.  Filter the metadata based on fungi and control group
+
+```{r}
+metadata_C_albicans <- metadata |>
+  filter(
+    stimulus %in% c("C_albicans", "Control_group"),
+    time %in% c("4h", "24h")
+  )
+
+head(metadata_C_albicans)
+```
+
+#Table 2
+
+1.  Extract sample ID's for C_albicans and Control group
+
+```{r}
+sample_ids <- metadata_C_albicans$sample_id
+```
+
+2.  Filter the count matrix with the extracted values by columns
+
+```{r}
+gene_counts_C_albicans <- counts |>
+  select(gene_id, all_of(sample_ids))
+
+#head(gene_counts_C_albicans)
+```
+
+## Inspecting the data:
+
+We have two tables with given dimensions.
+
+```{r}
+#check amount of rows and columns
+dim(metadata_C_albicans)
+dim(gene_counts_C_albicans)
+```
+
+We have 32 observations - samples in metadata, 8 for each donor (A to H) for fungi(8) and control(8), at two different time points (4h and 24h) each sample has corresponding 61892 reads of different gene expression withing that sample in the gene counts table.
+
+```{r}
+summary(metadata_C_albicans)
+```
+
+#Replicating vulcano plots from the artickle C_albicans vs Control_group at 4 h and at 24 h
+
+## Let's start withh vulcano plot for 4h chackpoint:
+
+```{r}
+
+metadata_4h <- metadata_C_albicans |>
+  filter(time == "4h")
+
+counts_albicans_4h <- gene_counts_C_albicans |>
+  select(
+    gene_id,
+    all_of(metadata_4h$sample_id)
+  )
+#head(metadata_4h)
+#head(counts_albicans_4h)
+
+```
+
+### Instal if missing a package and load library:
+
+```{r}
+#| echo: false
+#| eval: false
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("DESeq2")
+library(DESeq2)
+```
+
+### Sample_id to row names in metadata_4h:
+
+```{r}
+metadata_4h <- as.data.frame(metadata_4h)
+
+rownames(metadata_4h) <- metadata_4h$sample_id
+
+metadata_4h <- metadata_4h |>
+  select(-sample_id)
+
+head(rownames(metadata_4h))
+head(metadata_4h)
+
+```
+
+### We needs levels in data
+
+```{r}
+metadata_4h <- metadata_4h |>
+  mutate(
+    stimulus = factor(
+      stimulus,
+      levels = c("Control_group", "C_albicans")
+    ),
+    donor = factor(donor)
+  )
+
+```
+
+### Counts_albicans_4h from str to numeric datatype
+
+```{r}
+counts_albicans_4h[, -1] <- lapply(
+  counts_albicans_4h[, -1], as.numeric)
+#head(counts_albicans_4h)
+```
+
+### Let's check if rows in metadata match columnnames in counts:
+
+```{r}
+all(colnames(counts_albicans_4h)[-1] == rownames(metadata_4h))
+```
+
+### Preparing dataset for DESeq2
+
+```{r}
+#column to row names
+counts_matrix <- counts_albicans_4h |>
+  column_to_rownames(var = "gene_id") |>
+  as.matrix()
+```
+
+### Dataset for plotting:
+
+```{r}
+dds_4h <- DESeqDataSetFromMatrix(
+  countData = counts_matrix,
+  colData = metadata_4h,
+  design = ~ donor + stimulus
+)
+```
+
+```{r}
+head(dds_4h)
+```
+
+```{r}
+dim(dds_4h)
+```
+
+### Running DESeq analysis:
+
+```{r}
+dds_4h <- DESeq(dds_4h)
+```
+
+```{r}
+resultsNames(dds_4h)
+```
+
+```{r}
+#since i need C_albicans vs control:
+res_4h <- results(
+  dds_4h,
+  contrast = c("stimulus", "C_albicans", "Control_group")
+)
+head(res_4h)
+```
+
+baseMean: average normalized expression across samples.
+
+log2FoldChange: change in expression in C. albicans relative to control. - Positive = higher in C. albicans. - Negative = lower in C. albicans.
+
+lfcSE: standard error of the fold-change estimate.
+
+stat: Wald test statistic.
+
+pvalue: unadjusted p-value.
+
+padj: p-value adjusted for multiple testing. This is the one we'll use to assess statistical significance.
+
+### Collecting results to a dataframe:
+
+```{r}
+
+res_df_4h <- as.data.frame(res_4h) |>
+  rownames_to_column("gene_id")
+```
+
+### Asigning log expression description of value up, down, not significant
+
+```{r}
+
+res_df_4h <- res_df_4h |>
+  mutate(
+    significance = case_when(
+      !is.na(padj) & padj < 0.05 & log2FoldChange >= 1 ~ "Up",
+      !is.na(padj) & padj < 0.05 & log2FoldChange <= -1 ~ "Down",
+      TRUE ~ "Not significant"
+    )
+  )
+```
+
+### Results of our analysis TO BE COMPARED WITH NUMBERS FROM ARTICKLE at 4h:
+
+```{r}
+table(res_df_4h$significance)
+```
+
+### Selecting first 5 most upregulated and most down regulated genes 4 h:
+
+```{r}
+library(ggrepel)
+
+top_genes_4h <- res_df_4h |>
+  filter(significance %in% c("Up", "Down")) |>
+  group_by(significance) |>
+  slice_max(order_by = abs(log2FoldChange), n = 5) |>
+  ungroup()
+```
+
+# VULCANO PLOT at 4h:
+
+```{r}
+ggplot(res_df_4h, aes(x = log2FoldChange, y = -log10(padj), color = significance)) +
+  geom_point(alpha = 0.6, size = 1) +
+  scale_color_manual(values = c(
+    "Up" = "red",
+    "Down" = "blue",
+    "Not significant" = "grey"
+  )) +
+  geom_vline(xintercept = c(-1, 1), linetype = "dashed") +
+  geom_hline(yintercept = -log10(0.05), linetype = "dashed") +
+  labs(
+    title = "C. albicans vs Control at 4h",
+    x = "log2 fold change",
+    y = "-log10 adjusted p-value",
+    color = "Significance"
+  ) +
+  #Adds labels for 5 most up and down genes maybe later!
+  #geom_text_repel(
+  #data = top_genes_4h,
+  #aes(label = gene_id),
+  #size = 3,
+  #max.overlaps = Inf
+  #) +
+  theme_minimal()
+```
+
+## Analysis of data at 24h checkpoint:
+
+```{r}
+
+metadata_24h <- metadata_C_albicans |>
+  filter(time == "24h")
+
+counts_albicans_24h <- gene_counts_C_albicans |>
+  select(
+    gene_id,
+    all_of(metadata_24h$sample_id)
+  )
+head(metadata_24h)
+head(counts_albicans_24h)
+
+```
+
+### Sample_id to row names in metadata_24h:
+
+```{r}
+metadata_24h <- as.data.frame(metadata_24h)
+
+rownames(metadata_24h) <- metadata_24h$sample_id
+
+metadata_24h <- metadata_24h |>
+  select(-sample_id)
+
+head(rownames(metadata_24h))
+head(metadata_24h)
+
+```
+
+### We needs levels in data
+
+```{r}
+metadata_24h <- metadata_24h |>
+  mutate(
+    stimulus = factor(
+      stimulus,
+      levels = c("Control_group", "C_albicans")
+    ),
+    donor = factor(donor)
+  )
+
+```
+
+### Counts_albicans_24h from str to numeric datatype
+
+```{r}
+counts_albicans_24h[, -1] <- lapply(
+  counts_albicans_24h[, -1], as.numeric)
+
+#head(counts_albicans_24h)
+```
+
+### Let's check if rows in metadata match columnnames in counts:
+
+```{r}
+all(colnames(counts_albicans_24h)[-1] == rownames(metadata_24h))
+```
+
+### Preparing dataset for DESeq2
+
+```{r}
+#column to row names
+counts_matrix_2 <- counts_albicans_24h |>
+  column_to_rownames(var = "gene_id") |>
+  as.matrix()
+```
+
+### Dataset for plotting:
+
+```{r}
+dds_24h <- DESeqDataSetFromMatrix(
+  countData = counts_matrix_2,
+  colData = metadata_24h,
+  design = ~ donor + stimulus
+)
+```
+
+```{r}
+head(dds_24h)
+```
+
+### Running DESeq analysis:
+
+```{r}
+dds_24h <- DESeq(dds_24h)
+```
+
+```{r}
+resultsNames(dds_24h)
+```
+
+### Collecting results to a dataframe:
+
+```{r}
+res_24h <- results(dds_24h)
+head(res_24h)
+
+res_df_24h <- as.data.frame(res_24h) |>
+  rownames_to_column("gene_id")
+```
+
+### Asigning log expression description of value up, down, not significant
+
+```{r}
+
+res_df_24h <- res_df_24h |>
+  mutate(
+    significance = case_when(
+      !is.na(padj) & padj < 0.05 & log2FoldChange >= 1 ~ "Up",
+      !is.na(padj) & padj < 0.05 & log2FoldChange <= -1 ~ "Down",
+      TRUE ~ "Not significant"
+    )
+  )
+```
+
+### Results of our analysis TO BE COMPARED WITH NUMBERS FROM ARTICKLE at 24h:
+
+```{r}
+table(res_df_24h$significance)
+
+```
+
+### Selecting first 5 most upregulated and most down regulated genes 24 h:
+
+```{r}
+library(ggrepel)
+
+top_genes_24h <- res_df_24h |>
+  filter(significance %in% c("Up", "Down")) |>
+  group_by(significance) |>
+  slice_max(order_by = abs(log2FoldChange), n = 5) |>
+  ungroup()
+```
+
+# VULCANO PLOT at 24h:
+
+```{r}
+ggplot(res_df_24h, aes(x = log2FoldChange, y = -log10(padj), color = significance)) +
+  geom_point(alpha = 0.6, size = 1) +
+  scale_color_manual(values = c(
+    "Up" = "red",
+    "Down" = "blue",
+    "Not significant" = "grey"
+  )) +
+  geom_vline(xintercept = c(-1, 1), linetype = "dashed") +
+  geom_hline(yintercept = -log10(0.05), linetype = "dashed") +
+  labs(
+    title = "C. albicans vs Control at 24h",
+    x = "log2 fold change",
+    y = "-log10 adjusted p-value",
+    color = "Significance"
+  ) +
+  #Adds labels for 5 most up and down genes maybe later!
+  #geom_text_repel(
+  #data = top_genes_24h,
+  #aes(label = gene_id),
+  #size = 3,
+  #max.overlaps = Inf
+  #) +
+  theme_minimal()
+```

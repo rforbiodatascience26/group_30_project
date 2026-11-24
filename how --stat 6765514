@@ -1,0 +1,62 @@
+[33m633f6d6[m[33m ([m[1;36mHEAD -> [m[1;32mgreta[m[33m, [m[1;31morigin/greta[m[33m)[m HEAD@{0}: checkout: moving from main to greta
+[33ma54dd4e[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m HEAD@{1}: checkout: moving from greta to main
+[33m633f6d6[m[33m ([m[1;36mHEAD -> [m[1;32mgreta[m[33m, [m[1;31morigin/greta[m[33m)[m HEAD@{2}: checkout: moving from main to greta
+[33ma54dd4e[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m HEAD@{3}: checkout: moving from greta to main
+[33m633f6d6[m[33m ([m[1;36mHEAD -> [m[1;32mgreta[m[33m, [m[1;31morigin/greta[m[33m)[m HEAD@{4}: checkout: moving from main to greta
+[33ma54dd4e[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m refs/heads/main@{0}: reset: moving to origin/main
+[33ma54dd4e[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m HEAD@{5}: reset: moving to origin/main
+[33m6765514[m HEAD@{6}: checkout: moving from greta to main
+[33m633f6d6[m[33m ([m[1;36mHEAD -> [m[1;32mgreta[m[33m, [m[1;31morigin/greta[m[33m)[m HEAD@{7}: checkout: moving from main to greta
+[33ma54dd4e[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m refs/remotes/origin/main@{0}: pull: fast-forward
+[33md05025d[m[33m ([m[1;31morigin/Martina[m[33m)[m refs/remotes/origin/Martina@{0}: pull: fast-forward
+[33m6765514[m HEAD@{8}: checkout: moving from greta to main
+[33m633f6d6[m[33m ([m[1;36mHEAD -> [m[1;32mgreta[m[33m, [m[1;31morigin/greta[m[33m)[m HEAD@{9}: checkout: moving from greta to greta
+[33md6ba23f[m[33m ([m[1;31morigin/Swastika[m[33m)[m refs/remotes/origin/Swastika@{0}: pull: fast-forward
+[33m633f6d6[m[33m ([m[1;36mHEAD -> [m[1;32mgreta[m[33m, [m[1;31morigin/greta[m[33m)[m refs/remotes/origin/greta@{0}: update by push
+[33m633f6d6[m[33m ([m[1;36mHEAD -> [m[1;32mgreta[m[33m, [m[1;31morigin/greta[m[33m)[m refs/heads/greta@{0}: merge origin/main: Merge made by the 'ort' strategy.
+[33m633f6d6[m[33m ([m[1;36mHEAD -> [m[1;32mgreta[m[33m, [m[1;31morigin/greta[m[33m)[m HEAD@{10}: merge origin/main: Merge made by the 'ort' strategy.
+[33m12aed9d[m refs/remotes/origin/greta@{1}: update by push
+[33m12aed9d[m HEAD@{11}: checkout: moving from main to greta
+[33m6765514[m refs/heads/main@{1}: pull: Fast-forward
+[33m6765514[m HEAD@{12}: pull: Fast-forward
+[33mb6f4e78[m HEAD@{13}: checkout: moving from greta to main
+[33m6765514[m refs/remotes/origin/main@{1}: pull: fast-forward
+[33m12aed9d[m HEAD@{14}: checkout: moving from main to greta
+[33mb6f4e78[m HEAD@{15}: checkout: moving from greta to main
+[33m12aed9d[m refs/heads/greta@{1}: commit: .
+[33m12aed9d[m HEAD@{16}: commit: .
+[33m285e57f[m refs/remotes/origin/greta@{2}: update by push
+[33m285e57f[m HEAD@{17}: checkout: moving from main to greta
+[33mb6f4e78[m HEAD@{18}: checkout: moving from main to main
+[33mb6f4e78[m refs/heads/main@{2}: pull: Fast-forward
+[33mb6f4e78[m HEAD@{19}: pull: Fast-forward
+[33m79d709f[m HEAD@{20}: checkout: moving from greta to main
+[33mb6f4e78[m refs/remotes/origin/main@{2}: pull: fast-forward
+[33m285e57f[m refs/heads/greta@{2}: commit: ...
+[33m285e57f[m HEAD@{21}: commit: ...
+[33mc83a08c[m refs/remotes/origin/greta@{3}: update by push
+[33mc83a08c[m refs/heads/greta@{3}: commit: .
+[33mc83a08c[m HEAD@{22}: commit: .
+[33mf23929a[m HEAD@{23}: checkout: moving from main to greta
+[33m79d709f[m refs/heads/main@{3}: pull: Fast-forward
+[33m7476985[m refs/remotes/origin/Martina@{1}: pull: fast-forward
+[33m79d709f[m refs/remotes/origin/main@{3}: pull: fast-forward
+[33m79d709f[m HEAD@{24}: pull: Fast-forward
+[33mc85048a[m HEAD@{25}: checkout: moving from greta to main
+[33mf23929a[m refs/heads/greta@{4}: commit: .
+[33mf23929a[m HEAD@{26}: commit: .
+[33mb8a80fb[m refs/remotes/origin/greta@{4}: update by push
+[33mb8a80fb[m refs/heads/greta@{5}: commit: my
+[33mb8a80fb[m HEAD@{27}: commit: my
+[33m2456d5d[m refs/heads/greta@{6}: commit: my cleaning stuff
+[33m2456d5d[m HEAD@{28}: commit: my cleaning stuff
+[33mb5ed126[m HEAD@{29}: checkout: moving from main to greta
+[33mc85048a[m HEAD@{30}: checkout: moving from greta to main
+[33mb5ed126[m refs/remotes/origin/greta@{5}: update by push
+[33mb5ed126[m refs/heads/greta@{7}: commit: to my branch
+[33mb5ed126[m HEAD@{31}: commit: to my branch
+[33m68b3e12[m refs/heads/greta@{8}: branch: Created from origin/greta
+[33m68b3e12[m HEAD@{32}: checkout: moving from main to greta
+[33mc85048a[m refs/heads/main@{4}: clone: from https://github.com/rforbiodatascience26/group_30_project.git
+[33mc85048a[m refs/remotes/origin/HEAD@{0}: clone: from https://github.com/rforbiodatascience26/group_30_project.git
+[33mc85048a[m HEAD@{33}: clone: from https://github.com/rforbiodatascience26/group_30_project.git
