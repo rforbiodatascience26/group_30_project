@@ -1,0 +1,496 @@
+---
+title: "Analysis_Martina"
+format: html
+---
+
+# Shared fungal response, analyse trends of respons genes upregulated down regulated together
+
+INITIALIZATION
+
+```{r}
+library(tidyverse)
+library(broom)
+library(purrr)
+```
+
+Load necessary data
+
+```{r}
+expression_data <- read_csv("data/processed/expression_data.csv")
+```
+
+Separate expression data according to the time points (4h and 24h)
+
+```{r}
+# Also apply the factor conversion to the data
+expression_4h <- expression_data |>
+  filter(time == "4h") |>
+  mutate(
+    stimulus = relevel(       # consider different fungi as experimental groups and RPMI as reference
+      as.factor(stimulus),
+      ref = "Control_group"
+    ),
+    donor = as.factor(donor)  # convert donors into discrete experimental grouping variable
+  )
+
+expression_24h <- expression_data |>
+  filter(time == "24h") |>
+  mutate(
+    stimulus = relevel(
+      as.factor(stimulus),
+      ref = "Control_group"
+    ),
+    donor = as.factor(donor)
+  )
+```
+
+For 4h samples:
+
+Separate each gene
+
+```{r}
+expression_4h_nested <- expression_4h |>
+  group_by(gene_id) |>
+  nest() |>
+  mutate(
+    model_object = map(
+      data,
+      ~ lm(
+        formula = expression ~ donor + stimulus,
+        data = .x
+      )
+    )
+  )
+```
+
+Fit one model per gene considering both donor and stimulus
+
+Assumptions:
+
+- Donors can have different baseline expression levels, so to account for the accounting for donor-to-donor variation (without donor, differences between individuals could be mistaken for effects of fungal stimulation.).
+
+- Fungal stimulation can change gene expression.
+
+- The effect of fungal stimulation is broadly consistent across donors.
+
+```{r}
+expression_4h_nested <- expression_4h_nested |>
+  mutate(
+    model_object = map(
+      data,
+      ~ lm(
+        formula = expression ~ donor + stimulus,  # I'm considering their effects ad additive (not as interaction)
+        data = .x
+      )
+    )
+  )
+```
+
+Tidy() every gene (to finally get the p.value and estimate, std.error, statistic)
+
+```{r}
+expression_4h_nested <- expression_4h_nested |>
+  mutate(
+    model_results = map(model_object, tidy)
+  )
+```
+
+Turn the nested result tables into one regular table
+
+```{r}
+results_4h <- expression_4h_nested |>
+  select(gene_id, model_results) |>
+  unnest(model_results)
+```
+
+Keep only fungal treatment comparisons: only the fungal effect relative to RPMI
+
+```{r}
+results_4h <- results_4h |>
+  filter(str_starts(term, "stimulus")) 
+```
+
+As we are testing thousands of genes, we need to adjust the p.value (with the Benjamini-Hochberg method, the same method they use in the article)
+
+```{r}
+results_4h <- results_4h |>
+  group_by(term) |>
+  mutate(p.adj = p.adjust(p.value, method = "BH")) |>
+  ungroup()
+```
+
+We can finally select significant genes....
+
+```{r}
+significant_4h <- results_4h |>
+  mutate(is_significant = case_when(
+    p.adj < 0.05 ~ "Yes",
+    p.adj >= 0.05 ~ "No",
+    TRUE ~ NA_character_
+  ))
+```
+
+```{r}
+significant_4h <- significant_4h |>
+  filter(is_significant == "Yes") 
+```
+
+...and separate the upregulated for the downreglated
+
+```{r}
+upregulated_4h <- significant_4h |>
+  filter(estimate > 0.9)
+downregulated_4h <- significant_4h |>
+  filter(estimate < -0.9)
+```
+
+Check results
+
+```{r}
+upregulated_4h |>
+  count(term)
+```
+
+```{r}
+downregulated_4h |>
+  count(term)
+```
+
+Same process for the 24h samples:
+
+```{r}
+# separate the genes
+expression_24h_nested <- expression_24h |>
+  group_by(gene_id) |>
+  nest()
+# fit one model per gene
+expression_24h_nested <- expression_24h_nested |>
+  mutate(
+    model_object = map(
+      data,
+      ~ lm(
+        formula = expression ~ donor + stimulus,  
+        data = .x
+      )
+    )
+  )
+# tidy
+expression_24h_nested <- expression_24h_nested |>
+  mutate(
+    model_results = map(model_object, tidy)
+  )
+# go back to a single table
+results_24h <- expression_24h_nested |>
+  select(gene_id, model_results) |>
+  unnest(model_results)
+# remove the control group for final comparison
+results_24h <- results_24h |>
+  filter(str_starts(term, "stimulus")) 
+# adjust the p.value
+results_24h <- results_24h |>
+  group_by(term) |>
+  mutate(p.adj = p.adjust(p.value, method = "BH")) |>
+  ungroup()
+# distinguish between significant and non- genes
+significant_24h <- results_24h |>
+  mutate(is_significant = case_when(
+    p.adj < 0.05 ~ "Yes",
+    p.adj >= 0.05 ~ "No",
+    TRUE ~ NA_character_
+  ))
+significant_24h <- significant_24h |>
+  filter(is_significant == "Yes") 
+# separate upregulated genes from downregulated
+upregulated_24h <- significant_24h |>
+  filter(estimate > 0.9)
+downregulated_24h <- significant_24h |>
+  filter(estimate < -0.9)
+```
+
+Check it
+
+```{r}
+upregulated_24h |>
+  count(term)
+```
+
+```{r}
+downregulated_24h |>
+  count(term)
+```
+
+Differentially expressed genes for each fungus
+
+a\. Combine the upregulated and downregulated genes
+
+```{r}
+upregulated_all <- bind_rows(
+  upregulated_4h |> mutate(time = "4h"),
+  upregulated_24h |> mutate(time = "24h")
+)
+
+downregulated_all <- bind_rows(
+  downregulated_4h |> mutate(time = "4h"),
+  downregulated_24h |> mutate(time = "24h")
+)
+```
+
+```{r}
+# count unique genes for every combination of time point and fungus
+up_counts <- upregulated_all |>
+  group_by(time, term) |>
+  summarise(n_genes = n_distinct(gene_id)) |>
+  mutate(regulation = "Upregulated") |>
+  rename(stimulus = term) |>
+  mutate(stimulus = str_remove(stimulus, "stimulus"))  # clean the names
+
+down_counts <- downregulated_all |>
+  group_by(time, term) |>
+  summarise(n_genes = n_distinct(gene_id)) |>
+  mutate(regulation = "Downregulated") |>
+  rename(stimulus = term) |>
+  mutate(stimulus = str_remove(stimulus, "stimulus"))
+
+# combine them
+gene_counts <- bind_rows(up_counts, down_counts)
+```
+
+Visualization
+
+```{r}
+ggplot(gene_counts,
+       aes(x = stimulus, y = n_genes, fill = stimulus)) +
+  geom_col(width = 0.7) +
+  facet_grid(time ~ regulation) +
+  labs(
+    title = "Differentially expressed genes following fungal stimulation",
+    x = NULL,
+    y = "Number of genes",
+    fill = "Fungal stimulus"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(angle = 30, hjust = 1),
+    strip.text = element_text(face = "bold")
+  )
+```
+
+```{r}
+all_degs <- bind_rows(
+  upregulated_all |> mutate(regulation = "Upregulated"),
+  downregulated_all |> mutate(regulation = "Downregulated")
+)
+```
+
+```{r}
+all_degs <- all_degs |>
+  mutate(stimulus = str_remove(term, "stimulus"))
+
+ggplot(all_degs,
+       aes(x = stimulus, y = estimate, fill = stimulus)) +
+  geom_boxplot() +
+  facet_grid(time ~ regulation) +
+  labs(
+    title = "Individual fungal responses",
+    subtitle = "Distribution of effect sizes among significant differentially expressed gene",
+    x = "Fungal stimulus",
+    y = "Estimated expression change",
+    fill = "Fungal stimulus"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(face = "bold")
+  )
+```
+
+We can see the genes shared by all 3 fungi
+
+```{r}
+# For the upregulated, the genes appearing in all three comparisons:
+shared_up_4h <- upregulated_4h |>
+  group_by(gene_id) |>
+  filter(n_distinct(term) == 3) |> 
+  ungroup()
+# same for the downregulated at 4h
+shared_down_4h <- downregulated_4h |>
+  group_by(gene_id) |>
+  filter(n_distinct(term) == 3) |>
+  ungroup()
+# for 24h upregulated
+shared_up_24h <- upregulated_24h |>
+  group_by(gene_id) |>
+  filter(n_distinct(term) == 3) |>
+  ungroup()
+# for 24h downregulated
+shared_down_24h <- downregulated_24h |>
+  group_by(gene_id) |>
+  filter(n_distinct(term) == 3) |>
+  ungroup()
+```
+
+To find in general the number of shared genes that are upregulated and downregulated at different time points:
+
+```{r}
+# find the unique common upregulated genes per time point
+up_4h_genes <- shared_up_4h |>
+  distinct(gene_id)
+
+up_24h_genes <- shared_up_24h |>
+  distinct(gene_id)
+
+# common genes at the same time point
+common_up <- inner_join(
+up_4h_genes,
+up_24h_genes,
+by = "gene_id"
+)
+# find genes only present at 4h and 24h
+only_up_4h <- anti_join(
+  up_4h_genes,
+  up_24h_genes,
+  by = "gene_id"
+)
+
+only_up_24h <- anti_join(
+  up_24h_genes,
+  up_4h_genes,
+  by = "gene_id"
+)
+# for the downregulated genes
+down_4h_genes <- shared_down_4h |>
+  distinct(gene_id)
+
+down_24h_genes <- shared_down_24h |>
+  distinct(gene_id)
+
+common_down <- inner_join(
+  down_4h_genes,
+  down_24h_genes,
+  by = "gene_id"
+)
+
+only_down_4h <- anti_join(
+  down_4h_genes,
+  down_24h_genes,
+  by = "gene_id"
+)
+
+only_down_24h <- anti_join(
+  down_24h_genes,
+  down_4h_genes,
+  by = "gene_id"
+)
+```
+
+```{r}
+time_overlap <- bind_rows(
+  only_up_4h |> summarise(n_genes = n()) |>
+    mutate(regulation = "Upregulated", category = "4h only"),
+  
+  common_up |> summarise(n_genes = n()) |>
+    mutate(regulation = "Upregulated", category = "Both time points"),
+  
+  only_up_24h |> summarise(n_genes = n()) |>
+    mutate(regulation = "Upregulated", category = "24h only"),
+  
+  only_down_4h |> summarise(n_genes = n()) |>
+    mutate(regulation = "Downregulated", category = "4h only"),
+  
+  common_down |> summarise(n_genes = n()) |>
+    mutate(regulation = "Downregulated", category = "Both time points"),
+  
+  only_down_24h |> summarise(n_genes = n()) |>
+    mutate(regulation = "Downregulated", category = "24h only")
+)
+```
+
+```{r}
+ggplot(time_overlap, aes(x = category, y = n_genes, fill = category)) +
+  geom_col() +
+  facet_wrap(~ regulation) +
+  labs(
+    title = "Shared fungal response across time points",
+    x = "Time-point overlap",
+    y = "Number of genes"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+Before the visualization we create a new table with the summary of the data
+
+```{r}
+shared_counts <- bind_rows(
+  shared_up_4h |> 
+    summarise(n_genes = n_distinct(gene_id)) |>
+    mutate(time = "4h", regulation = "Upregulated"),
+  
+  shared_down_4h |> 
+    summarise(n_genes = n_distinct(gene_id)) |>
+    mutate(time = "4h", regulation = "Downregulated"),
+  
+  shared_up_24h |> 
+    summarise(n_genes = n_distinct(gene_id)) |>
+    mutate(time = "24h", regulation = "Upregulated"),
+  
+  shared_down_24h |> 
+    summarise(n_genes = n_distinct(gene_id)) |>
+    mutate(time = "24h", regulation = "Downregulated")
+)
+shared_counts
+```
+
+Plot these results:
+
+```{r}
+ggplot(shared_counts,
+       aes(x = time, y = n_genes, fill = regulation)) +
+  geom_col(position = "dodge", width = 0.65) +
+  geom_text(
+    aes(label = n_genes),
+    position = position_dodge(width = 0.65),
+    vjust = -0.5
+  ) +
+  scale_x_discrete(limits = c("4h", "24h")) +
+  labs(
+    title = "Common transcriptional response to all three fungi",
+    subtitle = "Genes significantly regulated in the same direction by all fungi",
+    x = "Time point",
+    y = "Number of shared genes",
+    fill = "Regulation"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+# All genes commonly regulated by the three fungi,
+# regardless of whether they are up- or downregulated
+
+all_common_4h <- bind_rows(
+  shared_up_4h,
+  shared_down_4h
+) |>
+  distinct(gene_id)
+
+all_common_24h <- bind_rows(
+  shared_up_24h,
+  shared_down_24h
+) |>
+  distinct(gene_id)
+
+# Genes common to all three fungi at both time points
+inner_join(
+  all_common_4h,
+  all_common_24h,
+  by = "gene_id"
+)
+```
+
+In our analysis, we identified genes commonly upregulated or downregulated by all three fungal stimuli at both 4h and 24h. However, no overlap was observed between the genes commonly regulated at the two time points. This suggests that the shared transcriptional response to fungal stimulation may be temporally dynamic, with distinct sets of genes contributing to the early and late responses.
+
+The reference study identified differentially regulated transcripts using corrected *p*-values below 0.05 and a Log2FC greater than 0.9 for upregulated genes or below −0.9 for downregulated genes. It then examined the overlap between the responses to *A. fumigatus*, *C. albicans* and *R. oryzae* at 4h and 24h, as well as the temporal distribution of genes commonly regulated by all three fungi, which they defined as the “core” host response.
+
+Unlike the reference study, our analysis did not identify a persistent core set of genes across both time points. This difference may reflect the distinct normalisation and statistical modelling approaches used in our analysis. We used CPM normalisation followed by log2 transformation and fitted gene-wise linear models accounting for donor and fungal stimulus. Although we applied the same corrected *p*-value and Log2FC thresholds as the paper, the resulting gene lists were different.

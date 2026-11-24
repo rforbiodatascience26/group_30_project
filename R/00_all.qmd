@@ -4,6 +4,13 @@ format: html
 ---
 
 ```{r}
+library(tidyverse)
+library(broom)
+library(purrr)
+library(ggrepel)
+```
+
+```{r}
 quarto::quarto_render("01_load.qmd")
 quarto::quarto_render("02_clean.qmd")
 quarto::quarto_render("03_augment_general.qmd")
