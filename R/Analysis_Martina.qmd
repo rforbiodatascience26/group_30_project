@@ -1,81 +1,89 @@
 ---
 title: "Analysis_Martina"
 format: html
+  echo: False
+  warning: False
+  message: False
+  include: False
 ---
 
 # Shared fungal response: identification of commonly upregulated and downregulated genes
 
+This part of the project focuses on the whole dataset. The objective is to discover which genes, accounting for all the fungi species and for the diversity due to different donors, are significativelly upregulated or downregulated compared to the control-group (RPMI), at two separate time points of 4h and after 24h. An overall view and comparison among the different expression levels is provided. Moreover, the second part of such analysis focuses on finding the genes commonly upregulated and downregulated at the two time points.
+
 ## 1. Initialization
 
-Load the packages required for data manipulation, statistical modelling, and plotting.
+Load the packages required for data manipulation, statistical modelling and plotting.
 
 ```{r}
-#| echo: False
-#| eval: True 
+#| include: True
 library(tidyverse)
 library(broom)
 library(purrr)
 library(ggrepel)
 ```
 
-Loading files
+Loading the files required for this analysis .
 
 ```{r}
-#| echo: False
-#| eval: True 
 counts <- read_csv("../data/counts.csv")
 metadata <- read_csv("../data/metadata.csv")
 ```
 
-**1) Removing genes with zero counts in every sample**
+#### **1) Removing genes with zero counts in every sample**
 
 Remove genes that have no reads in any sample, since they do not provide information for the expression analysis.
 
-First, convert the count values to integers and calculate the total number of counts for each gene across all samples.
+First of all, calculate the total number of counts for each gene across all samples (no need to covert any value as they already are \<dbl\> = double, numeric values)
 
 ```{r}
 # Identify genes with zero counts
 # Calculate total counts per gene
 counts <- counts |>
-  mutate(across(-gene_id, as.integer),
-         total_counts = rowSums(across(-gene_id)))
+  mutate(total_counts = rowSums(across(-gene_id)))
 ```
 
 Count how many genes have zero counts across all samples.
 
 ```{r}
-# How many genes have zero counts?
+#| echo: True
+#| include: True
 counts |>
   filter(total_counts == 0) |>
   nrow()
 ```
 
-Remove genes with zero total counts and discard the temporary column used for filtering.
+We find out that 18942 genes have 0 counts out of 61893.
+
+Then it becomes possible to remove such genes with zero total counts and discard the temporary column used for filtering.
 
 ```{r}
-# Remove the rows with genes with 0 counts
-# the remove the tmp total_count column previously created
 counts_no0 <- counts |>
   filter(total_counts > 0) |>
   select(-total_counts)
 ```
 
-Check the dimensions of the filtered dataset to see how many genes and sample columns remain.
+We can now check the dimensions of the filtered dataset to see how many genes and sample columns remain:
 
 ```{r}
-# Fast check
 dim(counts_no0)
 ```
 
-**2) Identify upregulated and downregulated genes**
+After this first extra cleaning step, 42951 genes remain, each analysed in 64 different conditions.
 
-3a. Normalising and transforming the counts
+#### **2) Identify upregulated and downregulated genes**
+
+In the second part of the "initialization" step, we are interested in normalizing the raw counts and reorganizing the data into a tidy format combined with sample metadata for further analysis.
+
+**3a. Normalising and transforming the counts**
 
 Convert raw counts into a normalised expression measure that can be used for exploratory analysis.
 
-We use counts per million (CPM), followed by a log2 transformation. Adding 1 prevents taking the logarithm of zero.
+We use counts per million (CPM), followed by a log2 transformation. Adding 1 prevents taking the logarithm of zero:
 
 ```{r}
+#| echo: True
+#| include: True
 counts_log <- counts_no0 |>
   mutate(across(
       -gene_id,
@@ -84,7 +92,7 @@ counts_log <- counts_no0 |>
   )
 ```
 
-3b. Reshaping the expression table
+**3b. Reshaping the expression table**
 
 Each sample is currently represented by a separate column. We reshape the table into long format, so that each row represents the expression of one gene in one sample.
 
@@ -97,20 +105,24 @@ counts_long <- counts_log |>
   )
 ```
 
-3c. Combining expression values with sample metadata
+**3c. Combining expression values with sample metadata**
+
+Finally, we combine the gene expression and the metadata.
 
 ```{r}
 expression_data <- counts_long |>
   left_join(metadata, by = "sample_id")
 ```
 
-3d. Preparing the data for statistical modelling
+Now the table is tidy and it's possible to continue with the analysis.
+
+**3d. Preparing the data for statistical modelling**
 
 We want to identify statistically significative genes whose expression changes following fungal stimulation compared with the control condition.
 
 The control group is used as the reference category. This means that the estimated effect of each fungal stimulus represents its expression change relative to the control.
 
-Donor is also included as a categorical variable to account for differences in baseline gene expression between individuals.
+Moreover, donor is also included as a categorical variable to account for differences in baseline gene expression between individuals.
 
 ```{r}
 expression_all_time_points <- expression_data |>
@@ -123,19 +135,11 @@ expression_all_time_points <- expression_data |>
   )
 ```
 
-3e. Fitting linear models
+**3e. Fitting linear models**
 
-We want to estimate the effect of each fungal stimulus on gene expression while accounting for donor-to-donor variation.
+We want to estimate the effect of each fungal stimulus on gene expression (relative to the control) while accounting for donor-to-donor variation (for differences in baseline expression between donors). One of the assumptions of our the model is that the fungal stimulation effect to be broadly consistent across donors.
 
-We fit a separate linear model for each gene at each time point.
-
-The model includes:
-
-- donor: accounts for differences in baseline expression between donors.
-
-- stimulus: estimates the expression change associated with each fungal stimulus relative to the control.
-
-The model assumes that the fungal stimulation effect is broadly consistent across donors.
+We fit a separate linear model for each gene at each time point...
 
 ```{r}
 expression_all_nested <- expression_all_time_points |>
@@ -152,7 +156,7 @@ expression_all_nested <- expression_all_time_points |>
   )
 ```
 
-Extract the coefficients and statistical results from each fitted model.
+...extract the coefficients and statistical results from each fitted model...
 
 ```{r}
 expression_all_nested <- expression_all_nested |>
@@ -161,7 +165,7 @@ expression_all_nested <- expression_all_nested |>
   )
 ```
 
-And combine the results into a single table, retaining the gene identifier and time point.
+...and combine the results into a single table, retaining the gene identifier, time point and statistics.
 
 ```{r}
 results_all <- expression_all_nested |>
@@ -169,18 +173,24 @@ results_all <- expression_all_nested |>
   unnest(model_results)
 ```
 
-Retain only the coefficients associated with fungal stimulation. The donor coefficients are not needed for the subsequent analysis.
+We want to retain only the coefficients associated with fungal stimulation. The donor coefficients are not needed for the subsequent analysis, so we do not select it.
 
 ```{r}
 results_all <- results_all |>
   filter(str_starts(term, "stimulus")) 
 ```
 
-3f. Correcting for multiple testing
+```{r}
+#| echo: True
+#| include: True
+head(results_all, n=10)
+```
+
+**3f. Correcting for multiple testing**
 
 Since thousands of genes are tested, we adjust the p-values to account for multiple comparisons.
 
-The Benjamini-Hochberg method is applied separately for each fungal stimulus and time point. The resulting adjusted p-values are stored in `q.value`.
+The Benjamini-Hochberg method is applied separately for each fungal stimulus and time point. The resulting adjusted p-values are stored in q.value.
 
 ```{r}
 results_all <- results_all |>
@@ -189,7 +199,7 @@ results_all <- results_all |>
   ungroup()
 ```
 
-3g. Identifying statistically significant genes
+**3g. Identifying statistically significant genes**
 
 Identify genes with an adjusted p-value below 0.05.
 
@@ -202,17 +212,17 @@ significant_all <- results_all |>
   ))
 ```
 
-3h. Classifying gene regulation
+**3h. Classifying gene regulation**
 
 We classify the direction and magnitude of the expression changes using the same effect-size thresholds as the reference study:
 
-- Estimate greater than 0.9: upregulated.
+- Estimate greater than 1: upregulated.
 
-- Estimate below -0.9: downregulated.
+- Estimate below -1: downregulated.
 
 - Values between these thresholds: not strongly regulated.
 
-We also simplify the stimulus names by removing the stimulus prefix.
+We also change the stimulus names by removing the stimulus prefix.
 
 ```{r}
 significant_all <- significant_all |>
@@ -238,13 +248,21 @@ significant_all <- significant_all |>
   select (gene_id, stimulus, time, regulation, estimate) 
 ```
 
+At this point, we only have upregulated and downregulated significative genes:
+
+```{r}
+#| echo: True
+#| include: True
+head(significant_all, n=10)
+```
+
 ## 4. Exploring the individual fungal responses
 
-4a. Preparing the data for the scatter plot
+**4a. Preparing the data for the scatter plot**
 
 We now want to investigate whether the baseline expression of a gene under control conditions is related to its estimated response to fungal stimulation.
 
-First, we calculated the mean expression of each gene in the control samples, separately for each time point.
+First, we calculate the mean expression of each gene in the control samples, separately for each time point.
 
 ```{r}
 control_means <- expression_data |>
@@ -255,7 +273,7 @@ control_means <- expression_data |>
   ungroup()
 ```
 
-Combine the control expression values with the estimated effects obtained from the linear models.
+Then we combine the control expression values with the estimated effects obtained from the linear models.
 
 ```{r}
 scatter_data <- significant_all |>
@@ -265,7 +283,7 @@ scatter_data <- significant_all |>
   )
 ```
 
-4b. Plotting baseline expression against estimated effect size
+**4b. Plotting baseline expression against estimated effect size**
 
 Each point represents one gene–fungus comparison at one time point. Is the gene's baseline expression level related to its response to fungal stimulation?
 
@@ -278,6 +296,8 @@ Each point represents one gene–fungus comparison at one time point. Is the gen
 - Negative estimates indicate decreased expression relative to control.
 
 ```{r}
+#| echo: True
+#| include: True
 ggplot(
   scatter_data,
   aes(
