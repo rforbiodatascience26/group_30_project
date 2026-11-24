@@ -3,8 +3,154 @@ title: "02_clean"
 format: html
 ---
 
-Clean dataset
+# Description of data variables:
+Sequencing identifier associated with the sequencing samples. They look like sequencing run and barcode information
+Time (4h and 24h) 
+Stimulation (Candita/ Aspergillus / Rhizopus / RPMI(control group))
+Samples (8 samples that represent 8 biological replicates/ 8 different human donours)
+Gene expression data (The nymbers represent the number of sequencing reads assigned to each gene in each sample)
 
 ```{r}
+library(tidyverse)
+```
 
+Inspect the dataset
+
+```{r}
+View(raw_data)
+```
+
+Tidy the dataset:
+
+1\) Extract sample metadata
+
+```{r}
+metadata_raw <- raw_data |>
+  rename(parameter = ...1) |>
+  slice(1:3)  # extract first 3 row with all metadata
+```
+
+2\) Transform the metadata from wide format to long format
+
+```{r}
+metadata_long <- metadata_raw |>
+  pivot_longer(
+    cols = -parameter,
+    names_to = "sample_id",
+    values_to = "value"
+  )
+# reorder metadata_long
+metadata_long <- metadata_long |>
+  select(sample_id, parameter, value)
+```
+
+3\) Back to wide, to have one row per sample
+
+```{r}
+metadata <- metadata_long |>
+  pivot_wider(
+    names_from = parameter,
+    values_from = value
+  ) |>
+  rename(donor = sample) |>
+  rename(stimulus = stimu)
+```
+
+4\) Renaming Stimulus column
+
+```{r}
+metadata <- metadata |> 
+  mutate(
+    stimulus = recode(stimulus,
+      "RPMI"                  = "Control_group",
+      "Candida-albicans"      = "C_albicans",
+      "Aspergillus-fumigatus" = "A_fumigatus",
+      "Rhizopus-oryzae"       = "R_oryzae"),
+    time = factor(time, levels = c("4h", "24h"))
+  )
+
+head(metadata)
+```
+
+
+5\) Get just the mrna counts
+
+```{r}
+counts <- raw_data |>
+  rename(gene_id = ...1) |>
+  filter(str_starts(gene_id, "ENSG"))
+```
+
+6\) Quality check
+
+```{r}
+#Any missing value?
+metadata |>
+  summarise(
+    missing_sample_id = sum(is.na(sample_id)),
+    missing_time = sum(is.na(time)),
+    missing_stimu = sum(is.na(stimu)),
+    missing_donor = sum(is.na(donor))
+  )
+```
+
+```{r}
+# Check duplicated gene identifiers
+counts |>
+  summarise(
+    duplicated_genes = sum(duplicated(gene_id))
+  )
+```
+
+```{r}
+# Check the experimental design
+metadata |>
+  count(time, stimu)
+```
+
+```{r}
+# Check donor distribution
+metadata |>
+  count(donor)
+```
+
+6\) More about quality control
+
+```{r}
+# Check duplicated gene IDs
+counts |>
+  count(gene_id) |>
+  filter(n > 1)
+```
+
+```{r}
+# Check missing values in count columns
+counts |>
+  summarise(across(-gene_id, ~ sum(is.na(.x))))
+```
+
+```{r}
+# Identify genes with zero counts
+# Calculate total counts per gene
+counts <- counts |>
+  mutate(across(-gene_id, as.integer))
+counts <- counts |>
+  mutate(total_counts = rowSums(across(-gene_id)))
+```
+
+```{r}
+# filter the samples with 0 counts:
+ # these genes that have no reads assigned to them in any sample
+counts |>
+  filter(total_counts == 0)
+
+```
+
+```{r}
+# how many genes? 
+counts |>
+  summarise(
+    total_genes = n(),
+    zero_count_genes = sum(total_counts == 0)
+  )
 ```
