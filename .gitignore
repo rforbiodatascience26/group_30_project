@@ -4,3 +4,5 @@
 .Ruserdata
 _raw/
 data/
+.RDataTmp
+.RDataTmp1

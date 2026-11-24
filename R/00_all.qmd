@@ -1,0 +1,20 @@
+---
+title: "Full_project"
+format: html
+---
+
+```{r}
+quarto::quarto_render("01_load.qmd")
+quarto::quarto_render("02_clean.qmd")
+quarto::quarto_render("03_augment_general.qmd")
+```
+
+1.  General
+
+2.  Martina
+
+3.  Anastasia
+
+4.  Greta
+
+5.  Teo

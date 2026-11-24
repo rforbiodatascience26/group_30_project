@@ -3,7 +3,7 @@ title: "01_load_dataset"
 format: html
 ---
 
-Load tydiverse package
+Load tidyverse package
 
 ```{r}
 #| echo: True
@@ -43,5 +43,10 @@ raw_data <- read_delim(
   delim = ";",
   col_types = cols(.default = col_character())
 )
+```
 
+Save raw data
+
+```{r}
+write_csv(raw_data, "../data/raw_data.csv")
 ```
