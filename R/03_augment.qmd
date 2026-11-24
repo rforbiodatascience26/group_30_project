@@ -1,20 +1,47 @@
 ---
-title: "03_augment"
+title: "augment_Martina"
 format: html
 ---
 
-""" 
-augmentation as adding new variables that weren't originally present in the dataset. The augment document should create the database used by all subsequent analyses. 
+1)  Load data
 
-For your experiment, I'd consider these additions:
-New variable	Derived from	Purpose
-condition	time + stimulus	Identify each experimental condition
-time_numeric	time	Represent 4h and 24h numerically, if needed
-infection_status	stimulus	Distinguish RPMI controls from fungal stimulation
+```{r}
+metadata <- read_csv("data/processed/metadata.csv")
+```
 
-You don't necessarily need all three. Choose variables that will actually help your analyses.
+2.  Normalise and transform the counts
 
-One important point: keep time and stimu as categorical variables when treating them as experimental groups. Don't replace them with numerical values just because you can.
+As the counts table currently contains raw counts, we decided to proceed using counts per million (CPM), followed by a log2 transformation.
 
-Also, don't confuse augmentation with normalisation. Calculating CPM or log-transformed expression values is a separate analytical processing decision.
-"""
+```{r}
+counts_log <- counts |>
+  mutate(across(
+      -gene_id,
+      ~ log2((.x / sum(.x)) * 1000000 + 1) #log2tranformation of CPM
+    )
+  )
+```
+
+Each sample is a separate column. For further analysis we make sample become a row for each gene.
+
+```{r}
+counts_long <- counts_log |>
+  pivot_longer(
+    cols = -gene_id,
+    names_to = "sample_id",
+    values_to = "expression"
+  )
+```
+
+And unite it with the metadata
+
+```{r}
+expression_data <- counts_long |>
+  left_join(metadata, by = "sample_id")
+```
+
+Save the augmented data
+
+```{r}
+write_csv(expression_data, "data/processed/expression_data.csv")
+```
