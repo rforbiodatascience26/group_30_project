@@ -14,16 +14,16 @@ library(tidyverse)
 Retrieve and load the dataset
 
 ```{r}
+
 #| echo: True
 #| eval: False
-<<<<<<< HEAD
-=======
 
->>>>>>> origin/main
+# Define the folder and filename
 raw_dir <- "../data/_raw"
 data_file <- "GSE162746_Raw_counts_collected.csv.gz"
 data_path <- file.path(raw_dir, data_file)
 
+# Define the GEO download location
 data_loc <- "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE162nnn/GSE162746/suppl/"
 
 # Create directory if it doesn't exist
@@ -34,26 +34,16 @@ if (!dir.exists(raw_dir)) {
 # Download only if the file doesn't exist
 if (!file.exists(data_path)) {
   download.file(
-<<<<<<< HEAD
-    url = paste0(data_loc, data_file),
-=======
     url = str_c(data_loc, data_file),
->>>>>>> origin/main
     destfile = data_path,
     mode = "wb"
   )
 }
 
-<<<<<<< HEAD
-# Load dataset
-counts <- read_csv(data_path)
-=======
-# Import raw dataset
+# Import the raw dataset
 raw_data <- read_delim(
   data_path,
   delim = ";",
   col_types = cols(.default = col_character())
 )
-
->>>>>>> origin/main
 ```

@@ -1,17 +1,19 @@
 ---
-title: "augment_Martina"
+title: "03_augment"
 format: html
 ---
 
-1)  Load data
+Load metadata
 
 ```{r}
-metadata <- read_csv("data/processed/metadata.csv")
+metadata <- read_csv("../data/metadata.csv")
 ```
 
-2.  Normalise and transform the counts
+3a. Normalising and transforming the counts
 
-As the counts table currently contains raw counts, we decided to proceed using counts per million (CPM), followed by a log2 transformation.
+Convert raw counts into a normalised expression measure that can be used for exploratory analysis.
+
+We use counts per million (CPM), followed by a log2 transformation. Adding 1 prevents taking the logarithm of zero.
 
 ```{r}
 counts_log <- counts |>
@@ -22,7 +24,9 @@ counts_log <- counts |>
   )
 ```
 
-Each sample is a separate column. For further analysis we make sample become a row for each gene.
+3b. Reshaping the expression table
+
+Each sample is currently represented by a separate column. We reshape the table into long format, so that each row represents the expression of one gene in one sample.
 
 ```{r}
 counts_long <- counts_log |>
@@ -33,15 +37,9 @@ counts_long <- counts_log |>
   )
 ```
 
-And unite it with the metadata
+3c. Combining expression values with sample metadata
 
 ```{r}
 expression_data <- counts_long |>
   left_join(metadata, by = "sample_id")
-```
-
-Save the augmented data
-
-```{r}
-write_csv(expression_data, "data/processed/expression_data.csv")
 ```

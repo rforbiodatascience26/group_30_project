@@ -206,8 +206,8 @@ We also simplify the stimulus names by removing the stimulus prefix.
 ```{r}
 significant_all <- significant_all |>
   mutate(regulation = case_when(
-    estimate > 0.9 ~ "upregulated",
-    estimate < -0.9 ~ "downregulated",
+    estimate > 1 ~ "upregulated",
+    estimate < -1 ~ "downregulated",
     TRUE ~ "not strongly regulated")) |>
   rename(stimulus = term) |>
   mutate(stimulus = str_remove(stimulus, "stimulus"))
