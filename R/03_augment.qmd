@@ -1,0 +1,20 @@
+---
+title: "03_augment"
+format: html
+---
+
+""" 
+augmentation as adding new variables that weren't originally present in the dataset. The augment document should create the database used by all subsequent analyses. 
+
+For your experiment, I'd consider these additions:
+New variable	Derived from	Purpose
+condition	time + stimulus	Identify each experimental condition
+time_numeric	time	Represent 4h and 24h numerically, if needed
+infection_status	stimulus	Distinguish RPMI controls from fungal stimulation
+
+You don't necessarily need all three. Choose variables that will actually help your analyses.
+
+One important point: keep time and stimu as categorical variables when treating them as experimental groups. Don't replace them with numerical values just because you can.
+
+Also, don't confuse augmentation with normalisation. Calculating CPM or log-transformed expression values is a separate analytical processing decision.
+"""
