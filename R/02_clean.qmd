@@ -3,19 +3,9 @@ title: "02_clean"
 format: html
 ---
 
-<<<<<<< HEAD
-Clean dataset
-
-```{r}
-
-```
-=======
 # Description of data variables:
-Sequencing identifier associated with the sequencing samples. They look like sequencing run and barcode information
-Time (4h and 24h) 
-Stimulation (Candita/ Aspergillus / Rhizopus / RPMI(control group))
-Samples (8 samples that represent 8 biological replicates/ 8 different human donours)
-Gene expression data (The nymbers represent the number of sequencing reads assigned to each gene in each sample)
+
+Sequencing identifier associated with the sequencing samples. They look like sequencing run and barcode information Time (4h and 24h) Stimulation (Candita/ Aspergillus / Rhizopus / RPMI(control group)) Samples (8 samples that represent 8 biological replicates/ 8 different human donours) Gene expression data (The nymbers represent the number of sequencing reads assigned to each gene in each sample)
 
 ```{r}
 library(tidyverse)
@@ -79,7 +69,6 @@ metadata <- metadata |>
 head(metadata)
 ```
 
-
 5\) Get just the mrna counts
 
 ```{r}
@@ -96,7 +85,7 @@ metadata |>
   summarise(
     missing_sample_id = sum(is.na(sample_id)),
     missing_time = sum(is.na(time)),
-    missing_stimu = sum(is.na(stimu)),
+    missing_stimu = sum(is.na(stimulus)),
     missing_donor = sum(is.na(donor))
   )
 ```
@@ -112,7 +101,7 @@ counts |>
 ```{r}
 # Check the experimental design
 metadata |>
-  count(time, stimu)
+  count(time, stimulus)
 ```
 
 ```{r}
@@ -146,15 +135,12 @@ counts <- counts |>
          total_counts = rowSums(across(-gene_id)))
 ```
 
-
 ```{r}
 # How many genes have zero counts?
 counts |>
   filter(total_counts == 0) |>
   nrow()
 ```
-
-
 
 ```{r}
 # Remove the rows with genes with 0 counts
@@ -165,8 +151,8 @@ counts_no0 <- counts |>
 ```
 
 7\) Save the files
-```{r}
-write_csv(metadata, "data/processed/metadata.csv")
-write_csv(counts_no0, "data/processed/counts_no0.csv")
-```
 
+```{r}
+write_csv(metadata, "../data/metadata.csv")
+write_csv(counts_no0, "../data/counts_no0.csv")
+```
