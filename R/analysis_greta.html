@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.4.349">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>analysis_greta</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="analysis_greta_files/libs/clipboard/clipboard.min.js"></script>
+<script src="analysis_greta_files/libs/quarto-html/quarto.js"></script>
+<script src="analysis_greta_files/libs/quarto-html/popper.min.js"></script>
+<script src="analysis_greta_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="analysis_greta_files/libs/quarto-html/anchor.min.js"></script>
+<link href="analysis_greta_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="analysis_greta_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="analysis_greta_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="analysis_greta_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="analysis_greta_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">analysis_greta</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+<div class="cell">
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: paketas 'ggplot2' buvo sukurtas pagal R versiją 4.3.2</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: paketas 'dplyr' buvo sukurtas pagal R versiją 4.3.2</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: paketas 'stringr' buvo sukurtas pagal R versiją 4.3.2</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: paketas 'lubridate' buvo sukurtas pagal R versiją 4.3.2</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+✔ dplyr     1.1.4     ✔ readr     2.1.4
+✔ forcats   1.0.0     ✔ stringr   1.5.1
+✔ ggplot2   3.4.4     ✔ tibble    3.2.1
+✔ lubridate 1.9.3     ✔ tidyr     1.3.0
+✔ purrr     1.0.2     
+── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()
+ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
+</div>
+</div>
+<section id="retrieve-and-load-dataset-into-one-location" class="level1">
+<h1>Retrieve and load dataset into one location</h1>
+<p>Load metadata and mRNA counts</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>metadata <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"../data/metadata.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Rows: 63 Columns: 4
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr (4): sample_id, time, stimulus, donor
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>counts <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"../data/counts.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Rows: 61893 Columns: 64
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr  (1): gene_id
+dbl (63): 140516_SN163_0555_AC3VYAACXX_L1_GCCAAT, 140424_SN163_0548_AC3TJNAC...
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
+</div>
+<p>3a. Normalising and transforming the counts</p>
+<p>Convert raw counts into a normalised expression measure that can be used for exploratory analysis.</p>
+<p>We use counts per million (CPM), followed by a log2 transformation. Adding 1 prevents taking the logarithm of zero.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>counts_log <span class="ot">&lt;-</span> counts <span class="sc">|&gt;</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>      <span class="sc">-</span>gene_id,</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>      <span class="sc">~</span> <span class="fu">log2</span>((.x <span class="sc">/</span> <span class="fu">sum</span>(.x)) <span class="sc">*</span> <span class="dv">1000000</span> <span class="sc">+</span> <span class="dv">1</span>) <span class="co">#log2tranformation of CPM</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>3b. Reshaping the expression table</p>
+<p>Each sample is currently represented by a separate column. We reshape the table into long format, so that each row represents the expression of one gene in one sample.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>counts_long <span class="ot">&lt;-</span> counts_log <span class="sc">|&gt;</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">cols =</span> <span class="sc">-</span>gene_id,</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_to =</span> <span class="st">"sample_id"</span>,</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_to =</span> <span class="st">"expression"</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>3c. Combining expression values with sample metadata</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>expression_data <span class="ot">&lt;-</span> counts_long <span class="sc">|&gt;</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(metadata, <span class="at">by =</span> <span class="st">"sample_id"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="analysis-of-candida-albicans-versus-control-group" class="level1">
+<h1>Analysis of Candida albicans versus control group``</h1>
+<section id="from-the-main-datatable-pulling-only-the-data-necesery-for-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="from-the-main-datatable-pulling-only-the-data-necesery-for-analysis">From the main datatable pulling only the data necesery for analysis:</h2>
+<p>Filtering expression data based on fungi, control group and time</p>
+<p>#Table 1</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>candida_4h <span class="ot">&lt;-</span> expression_data <span class="sc">|&gt;</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    time <span class="sc">==</span> <span class="st">"4h"</span>,</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    stimulus <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"C_albicans"</span>, <span class="st">"Control_group"</span>)</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>#Table 2</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>candida_24h <span class="ot">&lt;-</span>  expression_data <span class="sc">|&gt;</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    time <span class="sc">==</span> <span class="st">"24h"</span>,</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    stimulus <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"C_albicans"</span>, <span class="st">"Control_group"</span>)</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="inspecting-the-data" class="level2">
+<h2 class="anchored" data-anchor-id="inspecting-the-data">Inspecting the data:</h2>
+<p>We have two tables with given dimensions.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co">#check amount of rows and columns</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(candida_4h)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 990288      6</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(candida_24h)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 990288      6</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(candida_4h)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   gene_id           sample_id           expression          time          
+ Length:990288      Length:990288      Min.   : 0.0000   Length:990288     
+ Class :character   Class :character   1st Qu.: 0.0000   Class :character  
+ Mode  :character   Mode  :character   Median : 0.0000   Mode  :character  
+                                       Mean   : 1.0424                     
+                                       3rd Qu.: 0.5827                     
+                                       Max.   :14.5783                     
+   stimulus            donor          
+ Length:990288      Length:990288     
+ Class :character   Class :character  
+ Mode  :character   Mode  :character  
+                                      
+                                      
+                                      </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(candida_24h)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   gene_id           sample_id           expression          time          
+ Length:990288      Length:990288      Min.   : 0.0000   Length:990288     
+ Class :character   Class :character   1st Qu.: 0.0000   Class :character  
+ Mode  :character   Mode  :character   Median : 0.0000   Mode  :character  
+                                       Mean   : 1.1113                     
+                                       3rd Qu.: 0.7528                     
+                                       Max.   :14.0062                     
+   stimulus            donor          
+ Length:990288      Length:990288     
+ Class :character   Class :character  
+ Mode  :character   Mode  :character  
+                                      
+                                      
+                                      </code></pre>
+</div>
+</div>
+<p>Inspecting the experimental design in the filtered datasets</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Count how many observations (samples) are present for each stimulus</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>candida_4h <span class="sc">|&gt;</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>(sample_id, stimulus) <span class="sc">|&gt;</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(stimulus)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 2 × 2
+  stimulus          n
+  &lt;chr&gt;         &lt;int&gt;
+1 C_albicans        8
+2 Control_group     8</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Check that the number of genes is same between samples</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>candida_4h <span class="sc">|&gt;</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>(stimulus, sample_id, gene_id) <span class="sc">|&gt;</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(stimulus, sample_id, <span class="at">name =</span> <span class="st">"number_of_genes"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 16 × 3
+   stimulus      sample_id                              number_of_genes
+   &lt;chr&gt;         &lt;chr&gt;                                            &lt;int&gt;
+ 1 C_albicans    140424_SN163_0548_AC3TJNACXX_L5_ACAGTG           61893
+ 2 C_albicans    140424_SN163_0548_AC3TJNACXX_L6_AGTTCC           61893
+ 3 C_albicans    140424_SN163_0548_AC3TJNACXX_L7_GTTTCG           61893
+ 4 C_albicans    140516_SN163_0555_AC3VYAACXX_L1_GCCAAT           61893
+ 5 C_albicans    140516_SN163_0555_AC3VYAACXX_L3_AGTTCC           61893
+ 6 C_albicans    140516_SN163_0555_AC3VYAACXX_L5_CCGTCC           61893
+ 7 C_albicans    140516_SN163_0555_AC3VYAACXX_L7_GATCAG           61893
+ 8 C_albicans    140606_SN163_0558_AC4E0YACXX_L5_TTAGGC           61893
+ 9 Control_group 140424_SN163_0548_AC3TJNACXX_L4_GATCAG           61893
+10 Control_group 140424_SN163_0548_AC3TJNACXX_L7_AGTTCC           61893
+11 Control_group 140424_SN163_0548_AC3TJNACXX_L8_GTTTCG           61893
+12 Control_group 140516_SN163_0555_AC3VYAACXX_L1_ATCACG           61893
+13 Control_group 140516_SN163_0555_AC3VYAACXX_L2_CAGATC           61893
+14 Control_group 140516_SN163_0555_AC3VYAACXX_L4_TAGCTT           61893
+15 Control_group 140516_SN163_0555_AC3VYAACXX_L6_GTTTCG           61893
+16 Control_group 140516_SN163_0555_AC3VYAACXX_L8_GGCTAC           61893</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Count samples for each donor and stimulus combination</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Confirm that every donor has both Control_group and C_albicans</span></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>candida_4h <span class="sc">|&gt;</span></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>(sample_id, donor, stimulus) <span class="sc">|&gt;</span></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(donor, stimulus)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 16 × 3
+   donor stimulus          n
+   &lt;chr&gt; &lt;chr&gt;         &lt;int&gt;
+ 1 A     C_albicans        1
+ 2 A     Control_group     1
+ 3 B     C_albicans        1
+ 4 B     Control_group     1
+ 5 C     C_albicans        1
+ 6 C     Control_group     1
+ 7 D     C_albicans        1
+ 8 D     Control_group     1
+ 9 E     C_albicans        1
+10 E     Control_group     1
+11 F     C_albicans        1
+12 F     Control_group     1
+13 G     C_albicans        1
+14 G     Control_group     1
+15 H     C_albicans        1
+16 H     Control_group     1</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Count how many observations (samples) are present for each stimulus</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>candida_24h <span class="sc">|&gt;</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>(sample_id, stimulus) <span class="sc">|&gt;</span></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(stimulus)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 2 × 2
+  stimulus          n
+  &lt;chr&gt;         &lt;int&gt;
+1 C_albicans        8
+2 Control_group     8</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Check that the number of genes is same between samples</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>candida_24h <span class="sc">|&gt;</span></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>(stimulus, sample_id, gene_id) <span class="sc">|&gt;</span></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(stimulus, sample_id, <span class="at">name =</span> <span class="st">"number_of_genes"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 16 × 3
+   stimulus      sample_id                              number_of_genes
+   &lt;chr&gt;         &lt;chr&gt;                                            &lt;int&gt;
+ 1 C_albicans    140424_SN163_0548_AC3TJNACXX_L4_CAGATC           61893
+ 2 C_albicans    140424_SN163_0548_AC3TJNACXX_L6_ACTGAT           61893
+ 3 C_albicans    140424_SN163_0548_AC3TJNACXX_L8_GTCCGC           61893
+ 4 C_albicans    140516_SN163_0555_AC3VYAACXX_L2_TTAGGC           61893
+ 5 C_albicans    140516_SN163_0555_AC3VYAACXX_L4_CAGATC           61893
+ 6 C_albicans    140516_SN163_0555_AC3VYAACXX_L4_GAGTGG           61893
+ 7 C_albicans    140516_SN163_0555_AC3VYAACXX_L6_TAGCTT           61893
+ 8 C_albicans    140516_SN163_0555_AC3VYAACXX_L8_ACTTGA           61893
+ 9 Control_group 140424_SN163_0548_AC3TJNACXX_L5_ACTTGA           61893
+10 Control_group 140424_SN163_0548_AC3TJNACXX_L6_GTCCGC           61893
+11 Control_group 140424_SN163_0548_AC3TJNACXX_L7_ACTGAT           61893
+12 Control_group 140516_SN163_0555_AC3VYAACXX_L1_TAGCTT           61893
+13 Control_group 140516_SN163_0555_AC3VYAACXX_L3_GTCCGC           61893
+14 Control_group 140516_SN163_0555_AC3VYAACXX_L5_GTGGCC           61893
+15 Control_group 140516_SN163_0555_AC3VYAACXX_L7_GTGGCC           61893
+16 Control_group 140606_SN163_0558_AC4E0YACXX_L5_TAGCTT           61893</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Count samples for each donor and stimulus combination</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Confirm that every donor has both Control_group and C_albicans</span></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>candida_24h <span class="sc">|&gt;</span></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>(sample_id, donor, stimulus) <span class="sc">|&gt;</span></span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(donor, stimulus)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 16 × 3
+   donor stimulus          n
+   &lt;chr&gt; &lt;chr&gt;         &lt;int&gt;
+ 1 A     C_albicans        1
+ 2 A     Control_group     1
+ 3 B     C_albicans        1
+ 4 B     Control_group     1
+ 5 C     C_albicans        1
+ 6 C     Control_group     1
+ 7 D     C_albicans        1
+ 8 D     Control_group     1
+ 9 E     C_albicans        1
+10 E     Control_group     1
+11 F     C_albicans        1
+12 F     Control_group     1
+13 G     C_albicans        1
+14 G     Control_group     1
+15 H     C_albicans        1
+16 H     Control_group     1</code></pre>
+</div>
+</div>
+</section>
+<section id="preparing-data-for-linear-modeling" class="level2">
+<h2 class="anchored" data-anchor-id="preparing-data-for-linear-modeling">Preparing data for linear modeling:</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Prepare variables for linear modelling stimulus - factor also control group as referance, donor as factor.</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>candida_4h <span class="ot">&lt;-</span> candida_4h <span class="sc">|&gt;</span></span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">stimulus =</span> <span class="fu">factor</span>(stimulus),</span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">stimulus =</span> <span class="fu">relevel</span>(stimulus, <span class="at">ref =</span> <span class="st">"Control_group"</span>),</span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">donor =</span> <span class="fu">factor</span>(donor)</span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>candida_24h <span class="ot">&lt;-</span> candida_24h <span class="sc">|&gt;</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">stimulus =</span> <span class="fu">factor</span>(stimulus),</span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">stimulus =</span> <span class="fu">relevel</span>(stimulus, <span class="at">ref =</span> <span class="st">"Control_group"</span>),</span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">donor =</span> <span class="fu">factor</span>(donor)</span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Grouping data by gene_id:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>candida_4h_grouped <span class="ot">&lt;-</span> candida_4h <span class="sc">|&gt;</span></span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(gene_id)</span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>candida_4h_grouped</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 990,288 × 6
+# Groups:   gene_id [61,893]
+   gene_id         sample_id                     expression time  stimulus donor
+   &lt;chr&gt;           &lt;chr&gt;                              &lt;dbl&gt; &lt;chr&gt; &lt;fct&gt;    &lt;fct&gt;
+ 1 ENSG00000000003 140516_SN163_0555_AC3VYAACXX…      0.918 4h    C_albic… A    
+ 2 ENSG00000000003 140424_SN163_0548_AC3TJNACXX…      0.468 4h    C_albic… B    
+ 3 ENSG00000000003 140424_SN163_0548_AC3TJNACXX…      0.137 4h    C_albic… D    
+ 4 ENSG00000000003 140516_SN163_0555_AC3VYAACXX…      0.724 4h    C_albic… E    
+ 5 ENSG00000000003 140516_SN163_0555_AC3VYAACXX…      0.732 4h    C_albic… F    
+ 6 ENSG00000000003 140516_SN163_0555_AC3VYAACXX…      0.878 4h    C_albic… G    
+ 7 ENSG00000000003 140606_SN163_0558_AC4E0YACXX…      0.687 4h    C_albic… H    
+ 8 ENSG00000000003 140424_SN163_0548_AC3TJNACXX…      0.523 4h    C_albic… C    
+ 9 ENSG00000000003 140516_SN163_0555_AC3VYAACXX…      1.22  4h    Control… A    
+10 ENSG00000000003 140424_SN163_0548_AC3TJNACXX…      0.679 4h    Control… B    
+# ℹ 990,278 more rows</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>candida_24h_grouped <span class="ot">&lt;-</span> candida_24h <span class="sc">|&gt;</span></span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(gene_id)</span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>candida_24h_grouped</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 990,288 × 6
+# Groups:   gene_id [61,893]
+   gene_id         sample_id                     expression time  stimulus donor
+   &lt;chr&gt;           &lt;chr&gt;                              &lt;dbl&gt; &lt;chr&gt; &lt;fct&gt;    &lt;fct&gt;
+ 1 ENSG00000000003 140424_SN163_0548_AC3TJNACXX…      0.495 24h   C_albic… A    
+ 2 ENSG00000000003 140516_SN163_0555_AC3VYAACXX…      0.803 24h   C_albic… B    
+ 3 ENSG00000000003 140424_SN163_0548_AC3TJNACXX…      0.633 24h   C_albic… C    
+ 4 ENSG00000000003 140424_SN163_0548_AC3TJNACXX…      0.767 24h   C_albic… D    
+ 5 ENSG00000000003 140516_SN163_0555_AC3VYAACXX…      0.743 24h   C_albic… E    
+ 6 ENSG00000000003 140516_SN163_0555_AC3VYAACXX…      0.879 24h   C_albic… F    
+ 7 ENSG00000000003 140516_SN163_0555_AC3VYAACXX…      1.03  24h   C_albic… G    
+ 8 ENSG00000000003 140516_SN163_0555_AC3VYAACXX…      0.745 24h   C_albic… H    
+ 9 ENSG00000000003 140516_SN163_0555_AC3VYAACXX…      0.808 24h   Control… A    
+10 ENSG00000000003 140424_SN163_0548_AC3TJNACXX…      1.20  24h   Control… B    
+# ℹ 990,278 more rows</code></pre>
+</div>
+</div>
+<section id="using-linear-model-with-purr" class="level3">
+<h3 class="anchored" data-anchor-id="using-linear-model-with-purr">Using linear model with purr</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Split the grouped data into separate tables, one per gene</span></span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>candida_4h_split <span class="ot">&lt;-</span> candida_4h_grouped <span class="sc">|&gt;</span></span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_split</span>()</span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a><span class="co">#amount of tbles created:</span></span>
+<span id="cb41-7"><a href="#cb41-7" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(candida_4h_split)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 61893</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Split the grouped data into separate tables, one per gene</span></span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>candida_24h_split <span class="ot">&lt;-</span> candida_24h_grouped <span class="sc">|&gt;</span></span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_split</span>()</span>
+<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a><span class="co">#amount of tbles created:</span></span>
+<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(candida_24h_split)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 61893</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Inspect the first gene table</span></span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>candida_4h_split[[<span class="dv">1</span>]]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 16 × 6
+   gene_id         sample_id                     expression time  stimulus donor
+   &lt;chr&gt;           &lt;chr&gt;                              &lt;dbl&gt; &lt;chr&gt; &lt;fct&gt;    &lt;fct&gt;
+ 1 ENSG00000000003 140516_SN163_0555_AC3VYAACXX…      0.918 4h    C_albic… A    
+ 2 ENSG00000000003 140424_SN163_0548_AC3TJNACXX…      0.468 4h    C_albic… B    
+ 3 ENSG00000000003 140424_SN163_0548_AC3TJNACXX…      0.137 4h    C_albic… D    
+ 4 ENSG00000000003 140516_SN163_0555_AC3VYAACXX…      0.724 4h    C_albic… E    
+ 5 ENSG00000000003 140516_SN163_0555_AC3VYAACXX…      0.732 4h    C_albic… F    
+ 6 ENSG00000000003 140516_SN163_0555_AC3VYAACXX…      0.878 4h    C_albic… G    
+ 7 ENSG00000000003 140606_SN163_0558_AC4E0YACXX…      0.687 4h    C_albic… H    
+ 8 ENSG00000000003 140424_SN163_0548_AC3TJNACXX…      0.523 4h    C_albic… C    
+ 9 ENSG00000000003 140516_SN163_0555_AC3VYAACXX…      1.22  4h    Control… A    
+10 ENSG00000000003 140424_SN163_0548_AC3TJNACXX…      0.679 4h    Control… B    
+11 ENSG00000000003 140516_SN163_0555_AC3VYAACXX…      0.642 4h    Control… C    
+12 ENSG00000000003 140424_SN163_0548_AC3TJNACXX…      1.36  4h    Control… D    
+13 ENSG00000000003 140424_SN163_0548_AC3TJNACXX…      0.585 4h    Control… E    
+14 ENSG00000000003 140516_SN163_0555_AC3VYAACXX…      1.02  4h    Control… F    
+15 ENSG00000000003 140516_SN163_0555_AC3VYAACXX…      1.13  4h    Control… G    
+16 ENSG00000000003 140516_SN163_0555_AC3VYAACXX…      1.00  4h    Control… H    </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Inspect the first gene table</span></span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>candida_24h_split[[<span class="dv">1</span>]]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 16 × 6
+   gene_id         sample_id                     expression time  stimulus donor
+   &lt;chr&gt;           &lt;chr&gt;                              &lt;dbl&gt; &lt;chr&gt; &lt;fct&gt;    &lt;fct&gt;
+ 1 ENSG00000000003 140424_SN163_0548_AC3TJNACXX…      0.495 24h   C_albic… A    
+ 2 ENSG00000000003 140516_SN163_0555_AC3VYAACXX…      0.803 24h   C_albic… B    
+ 3 ENSG00000000003 140424_SN163_0548_AC3TJNACXX…      0.633 24h   C_albic… C    
+ 4 ENSG00000000003 140424_SN163_0548_AC3TJNACXX…      0.767 24h   C_albic… D    
+ 5 ENSG00000000003 140516_SN163_0555_AC3VYAACXX…      0.743 24h   C_albic… E    
+ 6 ENSG00000000003 140516_SN163_0555_AC3VYAACXX…      0.879 24h   C_albic… F    
+ 7 ENSG00000000003 140516_SN163_0555_AC3VYAACXX…      1.03  24h   C_albic… G    
+ 8 ENSG00000000003 140516_SN163_0555_AC3VYAACXX…      0.745 24h   C_albic… H    
+ 9 ENSG00000000003 140516_SN163_0555_AC3VYAACXX…      0.808 24h   Control… A    
+10 ENSG00000000003 140424_SN163_0548_AC3TJNACXX…      1.20  24h   Control… B    
+11 ENSG00000000003 140424_SN163_0548_AC3TJNACXX…      1.33  24h   Control… C    
+12 ENSG00000000003 140424_SN163_0548_AC3TJNACXX…      1.31  24h   Control… D    
+13 ENSG00000000003 140516_SN163_0555_AC3VYAACXX…      0.425 24h   Control… E    
+14 ENSG00000000003 140516_SN163_0555_AC3VYAACXX…      1.02  24h   Control… F    
+15 ENSG00000000003 140516_SN163_0555_AC3VYAACXX…      1.32  24h   Control… G    
+16 ENSG00000000003 140606_SN163_0558_AC4E0YACXX…      0.845 24h   Control… H    </code></pre>
+</div>
+</div>
+</section>
+<section id="fit-a-linear-model-for-the-first-gene" class="level3">
+<h3 class="anchored" data-anchor-id="fit-a-linear-model-for-the-first-gene">Fit a linear model for the first gene</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>model_test <span class="ot">&lt;-</span> <span class="fu">lm</span>(</span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>  expression <span class="sc">~</span> donor <span class="sc">+</span> stimulus,</span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> candida_4h_split[[<span class="dv">1</span>]]</span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Inspect the model results</span></span>
+<span id="cb49-7"><a href="#cb49-7" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_test)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = expression ~ donor + stimulus, data = candida_4h_split[[1]])
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-0.4513 -0.0388  0.0000  0.0388  0.4513 
+
+Coefficients:
+                   Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)         1.23169    0.20899   5.893 0.000603 ***
+donorB             -0.49663    0.27866  -1.782 0.117915    
+donorC             -0.48787    0.27866  -1.751 0.123450    
+donorD             -0.32100    0.27866  -1.152 0.287166    
+donorE             -0.41581    0.27866  -1.492 0.179280    
+donorF             -0.19576    0.27866  -0.703 0.505049    
+donorG             -0.06399    0.27866  -0.230 0.824944    
+donorH             -0.22565    0.27866  -0.810 0.444724    
+stimulusC_albicans -0.32254    0.13933  -2.315 0.053792 .  
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 0.2787 on 7 degrees of freedom
+Multiple R-squared:  0.6252,    Adjusted R-squared:  0.1968 
+F-statistic: 1.459 on 8 and 7 DF,  p-value: 0.3157</code></pre>
+</div>
+</div>
+<ul>
+<li>donorB, donorC, etc. represent differences between donors and the reference donor (donor A).</li>
+<li>(Intercept) represents the estimated expression for the reference donor under the control condition.</li>
+<li>stimulusC_albicans represents the condition difference after accounting for donor. We only need the stimulus coefficient for our differential-expression results.</li>
+</ul>
+</section>
+<section id="collect-results" class="level3">
+<h3 class="anchored" data-anchor-id="collect-results">Collect results</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">summary</span>(model_test)<span class="sc">$</span>coefficients <span class="sc">|&gt;</span></span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.data.frame</span>() <span class="sc">|&gt;</span></span>
+<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rownames_to_column</span>(<span class="st">"term"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(term <span class="sc">==</span> <span class="st">"stimulusC_albicans"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb51-5"><a href="#cb51-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(Estimate, <span class="st">`</span><span class="at">Pr(&gt;|t|)</span><span class="st">`</span>) <span class="sc">|&gt;</span></span>
+<span id="cb51-6"><a href="#cb51-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">gene_id =</span> <span class="fu">first</span>(candida_4h_split[[<span class="dv">1</span>]]<span class="sc">$</span>gene_id), <span class="at">.before =</span> <span class="dv">1</span>) <span class="sc">|&gt;</span></span>
+<span id="cb51-7"><a href="#cb51-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(</span>
+<span id="cb51-8"><a href="#cb51-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">log2FC =</span> Estimate,</span>
+<span id="cb51-9"><a href="#cb51-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">p_value =</span> <span class="st">`</span><span class="at">Pr(&gt;|t|)</span><span class="st">`</span></span>
+<span id="cb51-10"><a href="#cb51-10" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb51-11"><a href="#cb51-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-12"><a href="#cb51-12" aria-hidden="true" tabindex="-1"></a>results</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          gene_id    log2FC    p_value
+1 ENSG00000000003 -0.322543 0.05379201</code></pre>
+</div>
+</div>
+</section>
+<section id="repeat-for-every-single-gene-using-purr" class="level3">
+<h3 class="anchored" data-anchor-id="repeat-for-every-single-gene-using-purr">Repeat for every single gene using purr:</h3>
+<section id="for-4-h-data" class="level4">
+<h4 class="anchored" data-anchor-id="for-4-h-data">For 4 h data:</h4>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>results_4h <span class="ot">&lt;-</span> purrr<span class="sc">::</span><span class="fu">map_dfr</span>(candida_4h_split, <span class="cf">function</span>(gene_data) {</span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>  model <span class="ot">&lt;-</span> <span class="fu">lm</span>(</span>
+<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a>    expression <span class="sc">~</span> donor <span class="sc">+</span> stimulus,</span>
+<span id="cb53-5"><a href="#cb53-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> gene_data</span>
+<span id="cb53-6"><a href="#cb53-6" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb53-7"><a href="#cb53-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-8"><a href="#cb53-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summary</span>(model)<span class="sc">$</span>coefficients <span class="sc">|&gt;</span></span>
+<span id="cb53-9"><a href="#cb53-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">as.data.frame</span>() <span class="sc">|&gt;</span></span>
+<span id="cb53-10"><a href="#cb53-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rownames_to_column</span>(<span class="st">"term"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb53-11"><a href="#cb53-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(term <span class="sc">==</span> <span class="st">"stimulusC_albicans"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb53-12"><a href="#cb53-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(Estimate, <span class="st">`</span><span class="at">Pr(&gt;|t|)</span><span class="st">`</span>) <span class="sc">|&gt;</span></span>
+<span id="cb53-13"><a href="#cb53-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">gene_id =</span> <span class="fu">first</span>(gene_data<span class="sc">$</span>gene_id), <span class="at">.before =</span> <span class="dv">1</span>) <span class="sc">|&gt;</span></span>
+<span id="cb53-14"><a href="#cb53-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rename</span>(</span>
+<span id="cb53-15"><a href="#cb53-15" aria-hidden="true" tabindex="-1"></a>      <span class="at">log2FC =</span> Estimate,</span>
+<span id="cb53-16"><a href="#cb53-16" aria-hidden="true" tabindex="-1"></a>      <span class="at">p_value =</span> <span class="st">`</span><span class="at">Pr(&gt;|t|)</span><span class="st">`</span></span>
+<span id="cb53-17"><a href="#cb53-17" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb53-18"><a href="#cb53-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-19"><a href="#cb53-19" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(results_4h)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 61893     3</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(results_4h)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          gene_id      log2FC    p_value
+1 ENSG00000000003 -0.32254298 0.05379201
+2 ENSG00000000005  0.00000000        NaN
+3 ENSG00000000419  0.02623733 0.81660423
+4 ENSG00000000457 -0.02199424 0.78227013
+5 ENSG00000000460 -0.31138811 0.05987884
+6 ENSG00000000938 -0.33420794 0.01010631</code></pre>
+</div>
+</div>
+</section>
+<section id="for-24-h-data" class="level4">
+<h4 class="anchored" data-anchor-id="for-24-h-data">For 24 h data:</h4>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>results_24h <span class="ot">&lt;-</span> purrr<span class="sc">::</span><span class="fu">map_dfr</span>(candida_24h_split, <span class="cf">function</span>(gene_data) {</span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a>  model <span class="ot">&lt;-</span> <span class="fu">lm</span>(</span>
+<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a>    expression <span class="sc">~</span> donor <span class="sc">+</span> stimulus,</span>
+<span id="cb58-5"><a href="#cb58-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> gene_data</span>
+<span id="cb58-6"><a href="#cb58-6" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb58-7"><a href="#cb58-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb58-8"><a href="#cb58-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summary</span>(model)<span class="sc">$</span>coefficients <span class="sc">|&gt;</span></span>
+<span id="cb58-9"><a href="#cb58-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">as.data.frame</span>() <span class="sc">|&gt;</span></span>
+<span id="cb58-10"><a href="#cb58-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rownames_to_column</span>(<span class="st">"term"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb58-11"><a href="#cb58-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(term <span class="sc">==</span> <span class="st">"stimulusC_albicans"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb58-12"><a href="#cb58-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(Estimate, <span class="st">`</span><span class="at">Pr(&gt;|t|)</span><span class="st">`</span>) <span class="sc">|&gt;</span></span>
+<span id="cb58-13"><a href="#cb58-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">gene_id =</span> <span class="fu">first</span>(gene_data<span class="sc">$</span>gene_id), <span class="at">.before =</span> <span class="dv">1</span>) <span class="sc">|&gt;</span></span>
+<span id="cb58-14"><a href="#cb58-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rename</span>(</span>
+<span id="cb58-15"><a href="#cb58-15" aria-hidden="true" tabindex="-1"></a>      <span class="at">log2FC =</span> Estimate,</span>
+<span id="cb58-16"><a href="#cb58-16" aria-hidden="true" tabindex="-1"></a>      <span class="at">p_value =</span> <span class="st">`</span><span class="at">Pr(&gt;|t|)</span><span class="st">`</span></span>
+<span id="cb58-17"><a href="#cb58-17" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb58-18"><a href="#cb58-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb58-19"><a href="#cb58-19" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(results_24h)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 61893     3</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb61"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(results_24h)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          gene_id      log2FC      p_value
+1 ENSG00000000003 -0.26925464 0.0428114287
+2 ENSG00000000005  0.00000000          NaN
+3 ENSG00000000419 -0.10113903 0.1213203112
+4 ENSG00000000457  0.10721124 0.2064808001
+5 ENSG00000000460 -0.08699483 0.5236098691
+6 ENSG00000000938  0.89884220 0.0004743717</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="performing-bh-adjusment" class="level3">
+<h3 class="anchored" data-anchor-id="performing-bh-adjusment">Performing BH adjusment:</h3>
+<p>We need it since we are testing multiple genes separately, some genes will appear statistically significant just by chance, even if there is no real difference between Candida and control. For example, if all genes had no real effect, using a 0.05 threshold across 61,893 tests could produce roughly 3,095 apparently significant results by chance. BH adjustment corrects for this multiple-testing problem. It controls the false discovery rate (FDR): the expected proportion of false positives among the genes we identify as significant. It does not eliminate all false positives, but it makes our conclusions more reliable.</p>
+<section id="for-4-h-data-1" class="level4">
+<h4 class="anchored" data-anchor-id="for-4-h-data-1">For 4 h data:</h4>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb63"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a>results_4h <span class="ot">&lt;-</span> results_4h <span class="sc">|&gt;</span></span>
+<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb63-3"><a href="#cb63-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">adjusted_p_value =</span> <span class="fu">p.adjust</span>(p_value, <span class="at">method =</span> <span class="st">"BH"</span>)</span>
+<span id="cb63-4"><a href="#cb63-4" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Then, when identifying significant genes, use the adjusted p-value and identify significance as per articles treshold:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a>results_4h <span class="ot">&lt;-</span> results_4h <span class="sc">|&gt;</span></span>
+<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb64-3"><a href="#cb64-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">regulation =</span> <span class="fu">case_when</span>(</span>
+<span id="cb64-4"><a href="#cb64-4" aria-hidden="true" tabindex="-1"></a>      adjusted_p_value <span class="sc">&lt;</span> <span class="fl">0.05</span> <span class="sc">&amp;</span> log2FC <span class="sc">&gt;</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">"Upregulated"</span>,</span>
+<span id="cb64-5"><a href="#cb64-5" aria-hidden="true" tabindex="-1"></a>      adjusted_p_value <span class="sc">&lt;</span> <span class="fl">0.05</span> <span class="sc">&amp;</span> log2FC <span class="sc">&lt;</span> <span class="sc">-</span><span class="dv">1</span> <span class="sc">~</span> <span class="st">"Downregulated"</span>,</span>
+<span id="cb64-6"><a href="#cb64-6" aria-hidden="true" tabindex="-1"></a>      <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">"Not significant"</span></span>
+<span id="cb64-7"><a href="#cb64-7" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb64-8"><a href="#cb64-8" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+<section id="data-from-the-artickle-4-h" class="level3">
+<h3 class="anchored" data-anchor-id="data-from-the-artickle-4-h">Data from the artickle 4 h:</h3>
+<p>Transcripts that exhibited a Log2fold change &gt;1 or &lt;−1 compared to unstimulated PBMCs and an adjusted p-value of &lt; 0.05 were considered differentially regulated.</p>
+<p>C. albicans differentially regulated 1055 transcripts at 4 h:</p>
+<p>Downregulated: 234 Upregulated: 821</p>
+</section>
+<section id="my-results-4-h" class="level3">
+<h3 class="anchored" data-anchor-id="my-results-4-h">My results 4 h:</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb65"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a>results_4h <span class="sc">|&gt;</span></span>
+<span id="cb65-2"><a href="#cb65-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(regulation)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       regulation     n
+1   Downregulated   222
+2 Not significant 61251
+3     Upregulated   420</code></pre>
+</div>
+</div>
+<section id="for-24-h-data-1" class="level4">
+<h4 class="anchored" data-anchor-id="for-24-h-data-1">For 24 h data:</h4>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb67"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a>results_24h <span class="ot">&lt;-</span> results_24h <span class="sc">|&gt;</span></span>
+<span id="cb67-2"><a href="#cb67-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb67-3"><a href="#cb67-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">adjusted_p_value =</span> <span class="fu">p.adjust</span>(p_value, <span class="at">method =</span> <span class="st">"BH"</span>)</span>
+<span id="cb67-4"><a href="#cb67-4" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Then, when identifying significant genes, use the adjusted p-value and identify significance as per articles treshold:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb68"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a>results_24h <span class="ot">&lt;-</span> results_24h <span class="sc">|&gt;</span></span>
+<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb68-3"><a href="#cb68-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">regulation =</span> <span class="fu">case_when</span>(</span>
+<span id="cb68-4"><a href="#cb68-4" aria-hidden="true" tabindex="-1"></a>      adjusted_p_value <span class="sc">&lt;</span> <span class="fl">0.05</span> <span class="sc">&amp;</span> log2FC <span class="sc">&gt;</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">"Upregulated"</span>,</span>
+<span id="cb68-5"><a href="#cb68-5" aria-hidden="true" tabindex="-1"></a>      adjusted_p_value <span class="sc">&lt;</span> <span class="fl">0.05</span> <span class="sc">&amp;</span> log2FC <span class="sc">&lt;</span> <span class="sc">-</span><span class="dv">1</span> <span class="sc">~</span> <span class="st">"Downregulated"</span>,</span>
+<span id="cb68-6"><a href="#cb68-6" aria-hidden="true" tabindex="-1"></a>      <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">"Not significant"</span></span>
+<span id="cb68-7"><a href="#cb68-7" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb68-8"><a href="#cb68-8" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+<section id="data-from-the-artickle-4-h-1" class="level3">
+<h3 class="anchored" data-anchor-id="data-from-the-artickle-4-h-1">Data from the artickle 4 h:</h3>
+<p>Transcripts that exhibited a Log2fold change &gt;1 or &lt;−1 compared to unstimulated PBMCs and an adjusted p-value of &lt; 0.05 were considered differentially regulated.</p>
+<p>C. albicans differentially regulated 1055 transcripts at 24 h:</p>
+<p>Downregulated: 715 Upregulated: 1733</p>
+</section>
+<section id="my-results-24-h" class="level3">
+<h3 class="anchored" data-anchor-id="my-results-24-h">My results 24 h:</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb69"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a>results_24h <span class="sc">|&gt;</span></span>
+<span id="cb69-2"><a href="#cb69-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(regulation)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       regulation     n
+1   Downregulated   506
+2 Not significant 60453
+3     Upregulated   934</code></pre>
+</div>
+</div>
+<p>#VULCANO PLOT 4 H</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb71"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(results_4h,</span>
+<span id="cb71-2"><a href="#cb71-2" aria-hidden="true" tabindex="-1"></a>       <span class="fu">aes</span>(<span class="at">x =</span> log2FC, <span class="at">y =</span> <span class="sc">-</span><span class="fu">log10</span>(adjusted_p_value),</span>
+<span id="cb71-3"><a href="#cb71-3" aria-hidden="true" tabindex="-1"></a>           <span class="at">color =</span> regulation)) <span class="sc">+</span></span>
+<span id="cb71-4"><a href="#cb71-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>, <span class="at">size =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb71-5"><a href="#cb71-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(</span>
+<span id="cb71-6"><a href="#cb71-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Upregulated"</span> <span class="ot">=</span> <span class="st">"red"</span>,</span>
+<span id="cb71-7"><a href="#cb71-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Downregulated"</span> <span class="ot">=</span> <span class="st">"blue"</span>,</span>
+<span id="cb71-8"><a href="#cb71-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Not significant"</span> <span class="ot">=</span> <span class="st">"grey"</span></span>
+<span id="cb71-9"><a href="#cb71-9" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">+</span></span>
+<span id="cb71-10"><a href="#cb71-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="dv">1</span>), <span class="at">linetype =</span> <span class="st">"dashed"</span>) <span class="sc">+</span></span>
+<span id="cb71-11"><a href="#cb71-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="sc">-</span><span class="fu">log10</span>(<span class="fl">0.05</span>), <span class="at">linetype =</span> <span class="st">"dashed"</span>) <span class="sc">+</span></span>
+<span id="cb71-12"><a href="#cb71-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb71-13"><a href="#cb71-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Volcano plot: C. albicans vs Control (4h)"</span>,</span>
+<span id="cb71-14"><a href="#cb71-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"log2 Fold Change"</span>,</span>
+<span id="cb71-15"><a href="#cb71-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"-log10 Adjusted p-value"</span>,</span>
+<span id="cb71-16"><a href="#cb71-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">"Regulation"</span></span>
+<span id="cb71-17"><a href="#cb71-17" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb71-18"><a href="#cb71-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Removed 26990 rows containing missing values (`geom_point()`).</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="analysis_greta_files/figure-html/unnamed-chunk-33-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>#VULCANO PLOT 24 H</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb73"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(results_24h,</span>
+<span id="cb73-2"><a href="#cb73-2" aria-hidden="true" tabindex="-1"></a>       <span class="fu">aes</span>(<span class="at">x =</span> log2FC, <span class="at">y =</span> <span class="sc">-</span><span class="fu">log10</span>(adjusted_p_value),</span>
+<span id="cb73-3"><a href="#cb73-3" aria-hidden="true" tabindex="-1"></a>           <span class="at">color =</span> regulation)) <span class="sc">+</span></span>
+<span id="cb73-4"><a href="#cb73-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>, <span class="at">size =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb73-5"><a href="#cb73-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(</span>
+<span id="cb73-6"><a href="#cb73-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Upregulated"</span> <span class="ot">=</span> <span class="st">"red"</span>,</span>
+<span id="cb73-7"><a href="#cb73-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Downregulated"</span> <span class="ot">=</span> <span class="st">"blue"</span>,</span>
+<span id="cb73-8"><a href="#cb73-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Not significant"</span> <span class="ot">=</span> <span class="st">"grey"</span></span>
+<span id="cb73-9"><a href="#cb73-9" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">+</span></span>
+<span id="cb73-10"><a href="#cb73-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="dv">1</span>), <span class="at">linetype =</span> <span class="st">"dashed"</span>) <span class="sc">+</span></span>
+<span id="cb73-11"><a href="#cb73-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="sc">-</span><span class="fu">log10</span>(<span class="fl">0.05</span>), <span class="at">linetype =</span> <span class="st">"dashed"</span>) <span class="sc">+</span></span>
+<span id="cb73-12"><a href="#cb73-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb73-13"><a href="#cb73-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Volcano plot: C. albicans vs Control (24h)"</span>,</span>
+<span id="cb73-14"><a href="#cb73-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"log2 Fold Change"</span>,</span>
+<span id="cb73-15"><a href="#cb73-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"-log10 Adjusted p-value"</span>,</span>
+<span id="cb73-16"><a href="#cb73-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">"Regulation"</span></span>
+<span id="cb73-17"><a href="#cb73-17" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb73-18"><a href="#cb73-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Removed 26041 rows containing missing values (`geom_point()`).</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="analysis_greta_files/figure-html/unnamed-chunk-34-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="workflow-and-conclusion" class="level1">
+<h1>Workflow and conclusion:</h1>
+<p>Workflow:</p>
+<p>Select samples – Separate 4-hour and 24-hour Candida and control samples.</p>
+<p>Fit linear models – Fit one model per gene, accounting for donor pairing.</p>
+<p>Extract results – Obtain log2FC estimates and p-values for each gene.</p>
+<p>Correct for multiple testing – Apply Benjamini–Hochberg adjustment.</p>
+<p>Classify genes – Identify upregulated, downregulated and non-significant genes using the fold-change and adjusted p-value thresholds.</p>
+<p>Visualise results – Create volcano plots to display differential gene expression</p>
+<p>Conclusion:</p>
+<p>The results gained from the analysis differ from the results obtained by the authors of the article “Comparative host transcriptome in response to pathogenic fungi identifies common and species-specific transcriptional antifungal host response pathways”. I was able to recreate a similar volcano plot, however since the analysis was performed without using the refereed library - DE seq. The resulting calculation of significant up regulated and down regulated genes at both time points 4 h and 24 h as expected are different.</p>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        for (let i = 0; i < 2; i++) {
+          container.appendChild(note.children[i].cloneNode(true));
+        }
+        return container.innerHTML
+      } else {
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      return note.innerHTML;
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        console.log("RESIZE");
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
