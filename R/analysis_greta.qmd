@@ -1,0 +1,470 @@
+---
+title: "analysis_greta"
+format: html
+editor: visual
+---
+
+```{r}
+#| echo: False
+library(tidyverse)
+library(readr)
+```
+
+# Retrieve and load the  raw dataset into one location
+
+```{r}
+# Folder for raw data
+raw_dir <- "../data/_raw"
+
+# Dataset information
+data_file <- "GSE162746_Raw_counts_collected.csv.gz"
+data_path <- file.path(raw_dir, data_file)
+
+data_url <- paste0(
+  "https://ftp.ncbi.nlm.nih.gov/geo/series/",
+  "GSE162nnn/GSE162746/suppl/",
+  data_file
+)
+
+# Create folder if it does not exist
+if (!dir.exists(raw_dir)) {
+  dir.create(raw_dir, recursive = TRUE)
+}
+
+# Download dataset if it is not already present
+if (!file.exists(data_path)) {
+  download.file(
+    url = data_url,
+    destfile = data_path,
+    mode = "wb"
+  )
+}
+
+# Check that the file exists
+file.exists(data_path)
+
+```
+```{r}
+#| echo: False
+raw_data <- read_delim(
+  data_path,
+  delim = ";",
+  col_types = cols(.default = col_character())
+)
+```
+
+```{r}
+dim(raw_data)
+head(raw_data[, 1:5])
+```
+
+### Description of data variables:
+
+Sequencing identifier associated with the sequencing samples. They look like sequencing run and barcode information Time (4h and 24h) Stimulation (Candita/ Aspergillus / Rhizopus / RPMI(control group)) Samples (8 samples that represent 8 biological replicates/ 8 different human donours) Gene expression data (The nymbers represent the number of sequencing reads assigned to each gene in each sample)
+
+# Tidy the datasets:
+
+### Metadata
+
+```{r}
+
+# Extract metadata directly from the first three rows
+metadata <- as.data.frame(raw_data[1:3, ])
+
+# Rename the first column
+names(metadata)[1] <- "parameter"
+
+# Convert the three metadata rows into columns
+metadata <- as.data.frame(t(metadata[-1]))
+colnames(metadata) <- as.character(raw_data[[1]][1:3])
+
+# Add sample IDs as a column
+metadata <- tibble::rownames_to_column(metadata, "sample_id")
+
+# Rename columns
+names(metadata)[names(metadata) == "sample"] <- "donor"
+names(metadata)[names(metadata) == "stimu"] <- "stimulus"
+
+# Recode stimulus names
+metadata <- metadata |>
+  mutate(
+    stimulus = recode(
+      stimulus,
+      "RPMI" = "Control_group",
+      "Candida-albicans" = "C_albicans",
+      "Aspergillus-fumigatus" = "A_fumigatus",
+      "Rhizopus-oryzae" = "R_oryzae"
+    ),
+    time = factor(time, levels = c("4h", "24h"))
+  )
+
+head(metadata)
+```
+
+```{r}
+dim(metadata)
+summary(metadata)
+```
+### Gene counts:
+
+```{r}
+gene_counts <- as.data.frame(raw_data)
+names(gene_counts)[1] <- "gene_id"
+
+gene_counts <- gene_counts |>
+  filter(str_starts(gene_id, "ENSG"))
+```
+
+```{r}
+dim(gene_counts)
+head(gene_counts[, 1:5])
+```
+
+```{r}
+#Any missing value?
+metadata |>
+  summarise(
+    missing_sample_id = sum(is.na(sample_id)),
+    missing_time = sum(is.na(time)),
+    missing_stimulus = sum(is.na(stimulus)),
+    missing_donor = sum(is.na(donor))
+  )
+
+gene_counts |>
+  summarise(
+    missing_gene_id = sum(is.na(gene_id)),
+    missing_values = sum(is.na(as.matrix(select(gene_counts, -gene_id))))
+  )
+```
+
+# Analysis of Candida albicans versus control group``
+
+## From the two main datatables pulling only the data necesery for analysis:
+
+#Table 1
+
+1.  Filter the metadata based on fungi and control group
+
+```{r}
+metadata_candida_4h <- metadata |>
+  filter(
+    time == "4h",
+    stimulus %in% c("C_albicans", "Control_group")
+  )
+
+```
+
+#Table 2
+
+1.  Extract sample ID's for C_albicans and Control group
+
+```{r}
+sample_ids <- metadata_candida_4h$sample_id
+```
+
+2.  Filter the count matrix with the extracted values by columns
+
+```{r}
+gene_counts_candida_4h <- gene_counts |>
+  select(gene_id, all_of(sample_ids))
+
+
+```
+
+## Inspecting the data:
+
+We have two tables with given dimensions.
+
+```{r}
+#check amount of rows and columns
+dim(metadata_candida_4h)
+dim(gene_counts_candida_4h)
+```
+```{r}
+#make sure gene counts are numeric:
+gene_counts_candida_4h <- gene_counts_candida_4h |>
+  mutate(
+    across(-gene_id, as.numeric)
+  )
+#check
+sum(is.na(gene_counts_candida_4h[-1]))
+```
+
+```{r}
+summary(gene_counts_candida_4h[, -1])
+```
+Many zeros: The median is 0 in every sample. At least half of the genes have zero counts.
+
+Strongly right-skewed counts: The means are much higher than the medians.
+
+Large differences between genes: Some genes have very high counts, with maximum values above 200,000 in some samples.
+
+We have 32 observations - samples in metadata, 8 for each donor (A to H) for fungi(8) and control(8), at two different time points (4h and 24h) each sample has corresponding 61892 reads of different gene expression withing that sample in the gene counts table.
+
+### Check sequencing depth (calculating total counts per sample):
+
+```{r}
+library(tidyverse)
+
+library_sizes <- gene_counts_candida_4h |>
+  summarise(
+    across(-gene_id, sum)
+  ) |>
+  pivot_longer(
+    cols = everything(),
+    names_to = "sample_id",
+    values_to = "total_counts"
+  )
+
+library_sizes
+```
+
+### Visualising diference:
+
+```{r}
+ggplot(library_sizes, aes(x = reorder(sample_id, total_counts),
+                          y = total_counts)) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "Sequencing depth per sample (4h)",
+    x = "Sample",
+    y = "Total raw counts"
+  ) +
+  theme_minimal()
+```
+Why this matters: We need to account for sequencing depth before comparing Candida albicans with the control group.
+
+
+### Comparing sequencing depth:
+
+```{r}
+library_sizes |>
+  left_join(metadata_candida_4h, by = "sample_id") |>
+  group_by(stimulus) |>
+  summarise(
+    mean_counts = mean(total_counts),
+    median_counts = median(total_counts),
+    min_counts = min(total_counts),
+    max_counts = max(total_counts)
+  )
+```
+The control group has a higher average sequencing depth. Therefore, comparing raw counts directly could be misleading.
+
+### Preparing the sample information and sequencing-depth offsets.
+
+```{r}
+sample_info <- metadata_candida_4h |>
+  left_join(library_sizes, by = "sample_id") |>
+  mutate(
+    stimulus = relevel(factor(stimulus), ref = "Control_group"),
+    donor = factor(donor)
+  )
+```
+```{r}
+head(sample_info)
+```
+
+### Using quasi-Poisson generalized linear model (GLM) using purr
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+works with raw counts and acounts for:
+Sequencing depth through a library-size offset.
+Donor differences through donor.
+The treatment effect through stimulus
+
+```{r}
+# Select the first gene
+gene_id_test <- gene_counts_candida_4h$gene_id[1]
+
+# Extract its raw counts in the same sample order as sample_info
+gene_counts_test <- as.numeric(
+  unlist(
+    gene_counts_candida_4h[1, sample_info$sample_id],
+    use.names = FALSE
+  )
+)
+
+# Prepare the data
+test_data <- sample_info |>
+  mutate(count = gene_counts_test)
+
+# Fit the quasi-Poisson model
+model_test <- glm(
+  count ~ donor + stimulus + offset(log(total_counts)),
+  family = quasipoisson(link = "log"),
+  data = test_data
+)
+
+summary(model_test)
+```
+```{r}
+gene_results <- lapply(
+  seq_len(nrow(gene_counts_candida_4h)),
+  function(i) {
+
+    gene_counts <- as.numeric(
+      unlist(
+        gene_counts_candida_4h[i, sample_info$sample_id],
+        use.names = FALSE
+      )
+    )
+
+    test_data <- sample_info |>
+      mutate(count = gene_counts)
+
+    model <- glm(
+      count ~ donor + stimulus + offset(log(total_counts)),
+      family = quasipoisson(link = "log"),
+      data = test_data
+    )
+
+    coefficients <- summary(model)$coefficients
+
+    data.frame(
+      gene_id = gene_counts_candida_4h$gene_id[i],
+      log2FC = coefficients["stimulusC_albicans", "Estimate"] / log(2),
+      p_value = coefficients["stimulusC_albicans", "Pr(>|t|)"]
+    )
+  }
+)
+
+gene_results <- bind_rows(gene_results) |>
+  mutate(
+    adjusted_p_value = p.adjust(p_value, method = "BH"),
+    significant = abs(log2FC) > 1 & adjusted_p_value < 0.05
+  )
+```
+
+```{r}
+dim(gene_results)
+```
+
+```{r}
+head(gene_results)
+```
+
+```{r}
+table(gene_results$significant, useNA = "ifany")
+```
+```{r}
+gene_results |>
+  summarise(
+    upregulated = sum(
+      log2FC > 1 & adjusted_p_value < 0.05,
+      na.rm = TRUE
+    ),
+    downregulated = sum(
+      log2FC < -1 & adjusted_p_value < 0.05,
+      na.rm = TRUE
+    ),
+    total = sum(significant, na.rm = TRUE)
+  )
+```
+
+
+### Rerun on filtered genes:
+
+```{r}
+gene_results_filtered <- lapply(
+  seq_len(nrow(gene_counts_filtered)),
+  function(i) {
+    gene_counts <- as.numeric(
+      unlist(
+        gene_counts_filtered[i, sample_info$sample_id],
+        use.names = FALSE
+      )
+    )
+
+    test_data <- sample_info |>
+      mutate(count = gene_counts)
+
+    model <- glm(
+      count ~ donor + stimulus + offset(log(total_counts)),
+      family = quasipoisson(link = "log"),
+      data = test_data
+    )
+
+    coefficients <- summary(model)$coefficients
+
+    data.frame(
+      gene_id = gene_counts_filtered$gene_id[i],
+      log2FC = coefficients["stimulusC_albicans", "Estimate"] / log(2),
+      p_value = coefficients["stimulusC_albicans", "Pr(>|t|)"]
+    )
+  }
+)
+
+gene_results_filtered <- gene_results_filtered |>
+  bind_rows() |>
+  mutate(
+    adjusted_p_value = p.adjust(p_value, method = "BH"),
+    significant = abs(log2FC) > 1 & adjusted_p_value < 0.05
+  )
+```
+
+```{r}
+dim(gene_results_filtered)
+
+table(gene_results_filtered$significant, useNA = "ifany")
+```
+
+```{r}
+gene_results_filtered |>
+  summarise(
+    upregulated = sum(
+      log2FC > 1 & adjusted_p_value < 0.05,
+      na.rm = TRUE
+    ),
+    downregulated = sum(
+      log2FC < -1 & adjusted_p_value < 0.05,
+      na.rm = TRUE
+    ),
+    total = sum(significant, na.rm = TRUE)
+  )
+```
+
+
+#VULCANO PLOT 4 H
+
+
+
+```{r}
+ggplot(gene_results_filtered,
+       aes(x = log2FC, y = -log10(adjusted_p_value),
+           color = regulation)) +
+  geom_point(alpha = 0.5, size = 1) +
+  scale_color_manual(values = c(
+    "Upregulated" = "red",
+    "Downregulated" = "blue",
+    "Not significant" = "grey"
+  )) +
+  geom_vline(xintercept = c(-1, 1), linetype = "dashed") +
+  geom_hline(yintercept = -log10(0.05), linetype = "dashed") +
+  labs(
+    title = "Volcano plot: C. albicans vs Control (4h)",
+    x = "log2 Fold Change",
+    y = "-log10 Adjusted p-value",
+    color = "Regulation"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+range(-log10(gene_results_filtered$adjusted_p_value))
+```
+
+
