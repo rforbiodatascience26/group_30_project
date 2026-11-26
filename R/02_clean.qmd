@@ -160,6 +160,7 @@ counts |>
 
 ```
 
+
 ```{r}
 # how many genes? 
 counts |>
