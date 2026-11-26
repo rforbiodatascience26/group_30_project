@@ -1,0 +1,309 @@
+---
+title: "Anastasia_analysi"
+format: html
+---
+1.Load Data 
+```{r}
+library(tidyverse)
+
+expression_data <- read_tsv("../data/expression_data.tsv.gz")
+```
+
+2.Filter A.Fumigatus vs Control group 
+```{r}
+
+data_af <- expression_data |>
+  filter(stimulus == "A_fumigatus"|
+         stimulus == "Control_group") |>
+           filter(time == "4h" | time == "24h"
+    
+  )
+   
+```
+
+3.Quality control 
+```{r}
+data_af |>
+  count(stimulus, time)
+
+```
+
+4.Encoding categorical variables 
+the experimental variables stimulus, donor and time are converted into factors 
+the control group (RPMI) is set as the reference level for the stimulus variable. This allows the linear models to estimate changes in gene expression following Aspergillus fumigatus stimulation relative to the RRMI control 
+ donor identity treated as categorical variable to account for donor-specific differences
+ time as factor to distinquish the 4h and 24h obsrv
+ 
+```{r}
+data_af <- data_af |>
+  mutate(
+    stimulus = factor(
+      stimulus, 
+      levels = c("Control_group", "A_fumigatus")
+    ),
+    donor = factor(donor),
+    time = factor(time)
+  )
+```
+ 
+5. Nesting obsv by gene and time point 
+obsv are grouped by gene (gene_id) and time point (time). The data are then nested into separate tibbles for each gene time combination 
+(allow us to analyse each gene independently at both 4h and 24h time points while retaining obsv from both experimental conditions, as well as donor information)
+
+```{r}
+data_nested <- data_af |>
+  group_by(time, gene_id) |>
+  nest() |>
+  ungroup()
+```
+
+6.Fitting the linear models 
+```{r}
+data_nested <- data_nested |>
+  mutate(
+    model = map(
+      data, 
+      ~lm ( expression ~ stimulus + donor, data = .x)
+    )
+  )
+```
+
+7. Extracting the statistical results from the models
+After fitting a linear model for each gene at each time point, the broom::tidy() function is used to extract and organise the statistical results into tibbles. Using purrr::map(), this function is applied to every fitted model, with the results stored in a new column.
+
+The extracted information includes the estimated coefficients, standard errors, t-statistics, p-values and confidence intervals. These results allow us to evaluate the effect of A. fumigatus stimulation on gene expression relative to the RPMI control, while accounting for donor-specific differences.
+
+```{r}
+data_nested <- data_nested |>
+  mutate(
+    results = map(
+      model, 
+      ~broom::tidy (.x, conf.int = TRUE)
+    )
+  )
+```
+
+8. Unnest statistical results 
+```{r}
+data_results <- data_nested |>
+  select(gene_id, time, results) |>
+  unnest(results)
+```
+
+9.Select stimulus coeffiency 
+```{r}
+data_results <- data_results |>
+  filter(term == "stimulusA_fumigatus")
+```
+
+10.Calculate adjusted p-value 
+```{r}
+data_results <- data_results |>
+  group_by(time) |>
+  mutate(
+    p_adj = p.adjust(p.value, method = "BH")
+  ) |>
+  ungroup()
+```
+
+11.Inspect results 
+```{r}
+data_results |>
+  group_by(time) |>
+  summarise(
+    minimum_p_adj = min(p_adj, na.rm = TRUE),
+    significant_genes = sum(p_adj < 0.05, na.rm = TRUE)
+  )
+```
+
+12.Define differentially expressed genes
+
+```{r}
+data_results <- data_results |>
+  mutate(
+    neg_log10_padj = -log10(p_adj),
+    significant = p_adj < 0.05 & abs(estimate) > 1
+  )
+```
+
+13. Add gene symbols for the four marker genes
+```{r}
+marker_genes <- tibble(
+  gene_id = c(
+    "ENSG00000169429",
+    "ENSG00000125538",
+    "ENSG00000136244",
+    "ENSG00000232810"
+  ),
+  gene_symbol = c(
+    "CXCL8",
+    "IL1B",
+    "IL6",
+    "TNF"
+  )
+)
+
+data_results <- data_results |>
+  left_join(marker_genes, by = "gene_id")
+```
+
+14.Filter 4h and classify genes
+```{r}
+data_4h_results <- data_results |>
+  filter(time == "4h") |>
+  mutate(
+    regulation = case_when(
+      p_adj < 0.05 & estimate > 1 ~ "Upregulated",
+      p_adj < 0.05 & estimate < -1 ~ "Downregulated",
+      TRUE ~ "Not significant"
+    )
+  )
+```
+
+15. Volcano plot 4h 
+```{r}
+ggplot(data_4h_results,
+       aes(x = estimate,
+           y = neg_log10_padj,
+           colour = regulation)) +
+
+  geom_point(alpha = 0.65, size = 1.5) +
+  
+  geom_point(
+  data = data_4h_results |> filter(!is.na(gene_symbol)),
+  aes(x = estimate, y = neg_log10_padj),
+  colour = "black",
+  size = 3,
+  shape = 21,
+  fill = "yellow",
+  stroke = 1.2
+) +
+
+# Add gene names next to the highlighted points
+ggrepel::geom_text_repel(
+  data = data_4h_results |> filter(!is.na(gene_symbol)),
+  aes(label = gene_symbol),
+  colour = "black",
+  size = 4,
+  fontface = "bold",
+  max.overlaps = Inf
+) +
+  
+  geom_vline(
+    xintercept = c(-1, 1),
+    linetype = "dashed",
+    colour = "black"
+  ) +
+
+  geom_hline(
+    yintercept = -log10(0.05),
+    linetype = "dashed",
+    colour = "black"
+  ) +
+
+  scale_colour_manual(
+    values = c(
+      "Upregulated" = "#D94B4B",
+      "Downregulated" = "#3979B9",
+      "Not significant" = "#B8BEC7"
+    )
+  ) +
+
+  labs(
+    title = "Differential gene expression at 4h",
+    subtitle = "A. fumigatus stimulation vs RPMI control",
+    x = "Log2 fold change",
+    y = "-Log10 adjusted p-value",
+    colour = "Gene regulation"
+  ) +
+
+  theme_minimal(base_size = 13) +
+
+  theme(
+    plot.title = element_text(face = "bold", size = 15),
+    plot.subtitle = element_text(size = 11),
+    legend.position = "right"
+  )
+```
+
+16.Filter 24h and classify genes 
+```{r}
+data_24h_results <- data_results |>
+  filter(time == "24h") |>
+  mutate(
+    regulation = case_when(
+      p_adj < 0.05 & estimate > 1 ~ "Upregulated",
+      p_adj < 0.05 & estimate < -1 ~ "Downregulated",
+      TRUE ~ "Not significant"
+    )
+  )
+```
+
+
+
+17.Filter 24h and classify genes 
+```{r}
+ggplot(data_24h_results,
+       aes(x = estimate,
+           y = neg_log10_padj,
+           colour = regulation)) +
+
+  geom_point(alpha = 0.65, size = 1.5) +
+  
+  geom_point(
+  data = data_4h_results |> filter(!is.na(gene_symbol)),
+  aes(x = estimate, y = neg_log10_padj),
+  colour = "black",
+  size = 3,
+  shape = 21,
+  fill = "yellow",
+  stroke = 1.2
+) +
+
+# Add gene names next to the highlighted points
+ggrepel::geom_text_repel(
+  data = data_4h_results |> filter(!is.na(gene_symbol)),
+  aes(label = gene_symbol),
+  colour = "black",
+  size = 4,
+  fontface = "bold",
+  max.overlaps = Inf
+) +
+
+  geom_vline(
+    xintercept = c(-1, 1),
+    linetype = "dashed",
+    colour = "black"
+  ) +
+
+  geom_hline(
+    yintercept = -log10(0.05),
+    linetype = "dashed",
+    colour = "black"
+  ) +
+
+  scale_colour_manual(
+    values = c(
+      "Upregulated" = "#D94B4B",
+      "Downregulated" = "#3979B9",
+      "Not significant" = "#B8BEC7"
+    )
+  ) +
+
+  labs(
+    title = "Differential gene expression at 24h",
+    subtitle = "A. fumigatus stimulation vs RPMI control",
+    x = "Log2 fold change",
+    y = "-Log10 adjusted p-value",
+    colour = "Gene regulation"
+  ) +
+
+  theme_minimal(base_size = 13) +
+
+  theme(
+    plot.title = element_text(face = "bold", size = 15),
+    plot.subtitle = element_text(size = 11),
+    legend.position = "right"
+  )
+```
+
