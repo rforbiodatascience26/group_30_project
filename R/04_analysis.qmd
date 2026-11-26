@@ -1,0 +1,421 @@
+---
+title: "Analysis"
+format: html
+editor: visual
+---
+
+## 
+
+1.  Load libraries
+
+    ```{r}
+    library(tidyverse)
+    library(broom)
+    library(purrr)
+    library(ggrepel)
+    ```
+
+2.  Load datasets
+
+    ```{r}
+
+    ```
+
+3.  Convert counts into long format
+
+    ```{r}
+    counts_long <- counts |>
+      select(-total_counts) |>
+      pivot_longer(
+        cols = -gene_id,
+        names_to = "sample_id",
+        values_to = "count"
+      )
+    ```
+
+4.  Joins count with metadata
+
+    ```{r}
+    counts_aug <- counts_long |>
+      left_join(metadata, by = "sample_id")
+    ```
+
+5.  Checking any missing value
+
+    ```{r}
+    counts_aug |>
+      summarise(
+        total_samples = n_distinct(sample_id),
+        missing_stimulus = sum(is.na(stimulus)),
+        missing_time = sum(is.na(time)),
+        missing_donor = sum(is.na(donor))
+      )
+    ```
+
+6.  Set factors levels
+
+    ```{r}
+    counts_aug <- counts_aug |>
+      mutate(
+        stimulus = factor(
+          stimulus,
+          levels = c(
+            "Control_group",
+            "C_albicans",
+            "A_fumigatus",
+            "R_oryzae"
+          )
+        ),
+        time = factor(
+          time,
+          levels = c("4h", "24h")
+        ),
+        donor = factor(donor)
+      )
+    ```
+
+7.   Calculate total reads, CPM and log2(CPM + 1)
+
+    ```{r}
+    counts_aug <- counts_aug |>
+      group_by(sample_id) |>
+      mutate(
+        total_reads = sum(count),
+        cpm = count / total_reads * 1e6,
+        log_cpm = log2(cpm + 1)
+      ) |>
+      ungroup()
+    ```
+
+8.  Check CPM normalisation
+
+    ```{r}
+    cpm_check <- counts_aug |>
+      group_by(sample_id) |>
+      summarise(
+        total_cpm = sum(cpm),
+        .groups = "drop"
+      )
+
+    cpm_check
+    ```
+
+9.  Filter lower expressed genes
+
+    ```{r}
+    counts_aug <- counts_aug |>
+      group_by(gene_id) |>
+      filter(sum(count >= 10) >= 8) |>
+      ungroup()
+    ```
+
+10. After filtering, how many genes remain
+
+    ```{r}
+    counts_aug |>
+      summarise(number_of_genes = n_distinct(gene_id))
+    ```
+
+11. Select only R.Oryzae and control
+
+    ```{r}
+    counts_oryzae <- counts_aug |>
+      filter(
+        stimulus %in% c("Control_group",
+                        "R_oryzae")
+      )
+    ```
+
+    ```{r}
+    counts_oryzae |>
+      distinct(sample_id, time, stimulus, donor) |>
+      count(time, stimulus)
+    ```
+
+12.  Check donor matching
+
+    ```{r}
+    sample_check <- counts_oryzae |>
+      distinct(sample_id, time, stimulus) |>
+      count(time, stimulus) |>
+      pivot_wider(
+        names_from = stimulus,
+        values_from = n,
+        values_fill = 0
+      )
+
+    sample_check
+    ```
+
+13. Prepare data for modelling
+
+    ```{r}
+    counts_aug_long <- counts_oryzae |>
+      select(
+        gene_id,
+        sample_id,
+        donor,
+        time,
+        stimulus,
+        log_cpm
+      )
+    ```
+
+14. Nest data by gene and time
+
+    ```{r}
+    counts_aug_long_nested <- counts_aug_long |>
+      group_by(gene_id, time) |>
+      nest() |>
+      ungroup()
+
+    counts_aug_long_nested
+    ```
+
+15. Fit linear models
+
+    ```{r}
+    counts_aug_long_nested <- counts_aug_long_nested |>
+      mutate(
+        model_object = map(
+          .x = data,
+          .f = ~ lm(
+            formula = log_cpm ~ donor + stimulus,
+            data = .x
+          )
+        )
+      )
+    ```
+
+We fit one model for each gene at 4h and another at 24h.
+
+10. Extract model estimates
+
+    ```{r}
+    counts_aug_long_nested <- counts_aug_long_nested |>
+      mutate(
+        model_object_tidy = map(
+          .x = model_object,
+          .f = ~ tidy(
+            x = .x,
+            conf.int = TRUE,
+            conf.level = 0.95
+          )
+        )
+      )
+    ```
+
+11. Combine model results
+
+    ```{r}
+    gene_estimates <- counts_aug_long_nested |>
+      unnest(model_object_tidy)
+    ```
+
+12. Select the R. oryzae effect
+
+    ```{r}
+    gene_estimates <- gene_estimates |>
+      filter(term == "stimulusR_oryzae") |>
+      select(
+        gene_id,
+        time,
+        p.value,
+        estimate,
+        conf.low,
+        conf.high
+      ) |>
+      ungroup()
+    ```
+
+13. Adjust p-values and identify differentially expressed genes
+
+    ```{r}
+    gene_estimates <- gene_estimates |>
+      group_by(time) |>
+      mutate(
+        q.value = p.adjust(p.value, method = "BH"),
+        expression = case_when(
+          q.value < 0.05 & estimate > 1 ~ "Upregulated",
+          q.value < 0.05 & estimate < -1 ~ "Downregulated",
+          TRUE ~ "Not significant"
+        )
+      ) |>
+      ungroup()
+    ```
+
+14. Count significant genes:
+
+    ```{r}
+    gene_estimates |>
+      count(time, expression)
+    ```
+
+<!-- -->
+
+14. Save results
+
+    ```{r}
+    gene_estimates |>
+      write_tsv("data/05_gene_estimates.tsv.gz")
+    ```
+
+15. Check number of gene estimates
+
+    ```{r}
+    gene_estimates |>
+      count(time)
+    ```
+
+16. Check missing p-values
+
+    ```{r}
+    gene_estimates |>
+      summarise(
+        total_genes = n(),
+        missing_estimates = sum(is.na(estimate)),
+        missing_pvalues = sum(is.na(p.value))
+      )
+    ```
+
+17. Volcanno plot of gene expression for 4h
+
+    ```{r}
+
+    p1 <- gene_estimates |>
+      filter(time == "4h") |>
+      mutate(
+        neg_log10_q = -log10(pmax(q.value, 1e-300))
+      ) |>
+      arrange(desc(neg_log10_q)) |>
+      mutate(
+        lbl = ifelse(
+          expression != "Not significant" &
+          row_number() <= 20,
+          gene_id,
+          ""
+        )
+      ) |>
+      ggplot(
+        aes(
+          x = estimate,
+          y = neg_log10_q
+        )
+      ) +
+
+      geom_point(
+        aes(colour = expression),
+        size = 1.8,
+        alpha = 0.25
+      ) +
+
+      geom_text_repel(
+        aes(label = lbl),
+        colour = "black",
+        size = 3,
+        max.overlaps = 30,
+        box.padding = 0.4,
+        point.padding = 0.2
+      ) +
+
+      geom_vline(
+        xintercept = 0,
+        colour = "black",
+        linewidth = 0.5
+      ) +
+
+      scale_colour_manual(
+        values = c(
+          "Upregulated" = "red",
+          "Downregulated" = "blue",
+          "Not significant" = "grey70"
+        )
+      ) +
+
+      labs(
+        title = "R. oryzae Stimulation at 4 Hours",
+        subtitle = "Compared with unstimulated RPMI control",
+        x = "Estimated difference",
+        y = "-log10(q-value)",
+        colour = "Expression"
+      ) +
+
+      theme_bw(base_size = 14) +
+
+      theme(
+        legend.position = "right",
+        plot.title = element_text(size = 18, hjust = 0.5),
+        plot.subtitle = element_text(size = 12, hjust = 0.5),
+        axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        panel.grid.major = element_line(colour = "grey90"),
+        panel.grid.minor = element_line(colour = "grey95"),
+        plot.margin = margin(t = 20, r = 20, b = 20, l = 20)
+      )
+
+    p1
+
+    ```
+
+18.  Volcano plot of gene expression at 8hr
+
+    ```{r}
+
+    p2 <- gene_estimates |>
+      filter(time == "24h") |>
+      mutate(
+        neg_log10_q = -log10(pmax(q.value, 1e-300))
+      ) |>
+      ggplot(
+        aes(
+          x = estimate,
+          y = neg_log10_q
+        )
+      ) +
+
+      geom_point(
+        aes(colour = expression),
+        size = 1.8,
+        alpha = 0.25
+      ) +
+
+      geom_vline(
+        xintercept = 0,
+        colour = "black",
+        linewidth = 0.5
+      ) +
+
+      scale_colour_manual(
+        values = c(
+          "Upregulated" = "red",
+          "Downregulated" = "blue",
+          "Not significant" = "grey70"
+        )
+      ) +
+
+      labs(
+        title = "R. oryzae Stimulation at 24 Hours",
+        subtitle = "Compared with unstimulated RPMI control",
+        x = "Estimated difference",
+        y = "-log10(q-value)",
+        colour = "Expression"
+      ) +
+
+      theme_bw(base_size = 14) +
+
+      theme(
+        legend.position = "right",
+        plot.title = element_text(size = 18, hjust = 0.5),
+        plot.subtitle = element_text(size = 12, hjust = 0.5),
+        axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        panel.grid.major = element_line(colour = "grey90"),
+        panel.grid.minor = element_line(colour = "grey95"),
+        plot.margin = margin(t = 20, r = 20, b = 20, l = 20)
+      )
+
+    p2
+
+    ```
+
+19. Show

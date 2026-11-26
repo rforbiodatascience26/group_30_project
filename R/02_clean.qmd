@@ -89,7 +89,7 @@ metadata |>
   summarise(
     missing_sample_id = sum(is.na(sample_id)),
     missing_time = sum(is.na(time)),
-    missing_stimu = sum(is.na(stimu)),
+    missing_stimulus = sum(is.na(stimulus)),
     missing_donor = sum(is.na(donor))
   )
 ```
@@ -105,7 +105,7 @@ counts |>
 ```{r}
 # Check the experimental design
 metadata |>
-  count(time, stimu)
+  count(time, stimulus)
 ```
 
 ```{r}
