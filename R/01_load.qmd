@@ -49,6 +49,7 @@ raw_data <- read_delim(
 head(raw_data)
 ```
 
+
 Save raw data
 ```{r}
 write_csv(raw_data, "../data/raw_data.csv")
