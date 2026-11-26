@@ -17,6 +17,7 @@ library(tidyverse)
 Inspect the dataset
 
 ```{r}
+raw_data<- read_csv("../data/raw_data.csv")
 View(raw_data)
 ```
 
@@ -71,17 +72,30 @@ metadata <- metadata |>
 
 head(metadata)
 ```
+5\) Save the metadata
+
+```{r}
+write_csv(metadata, "../data/metadata.csv")
+
+```
 
 
-5\) Get just the mrna counts
+6\) Get just the mrna counts
 
 ```{r}
 counts <- raw_data |>
   rename(gene_id = ...1) |>
   filter(str_starts(gene_id, "ENSG"))
 ```
+7\) save the counts
 
-6\) Quality check
+```{r}
+write_csv(counts, "../data/counts.csv")
+
+```
+
+
+8\) Quality check
 
 ```{r}
 #Any missing value?
@@ -114,7 +128,7 @@ metadata |>
   count(donor)
 ```
 
-6\) More about quality control
+9\) More about quality control
 
 ```{r}
 # Check duplicated gene IDs
