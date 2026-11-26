@@ -1,0 +1,6 @@
+---
+title: "Presentation.qmd"
+author: "All"
+format: revealjs
+editor: visual
+---
