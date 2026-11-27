@@ -40,6 +40,7 @@ expression_data <- expression_data |>
   filter(total_expression > 0) |>
   select(gene_id) |>
   inner_join(expression_data, by = "gene_id")
+head(expression_data)
 ```
 
 ## 3. Significative and non-significative genes
@@ -110,7 +111,7 @@ results_all <- results_all |>
 head(results_all, n=10)
 ```
 
-**3f. Correcting for multiple testing**
+**3b. Correcting for multiple testing**
 
 Since thousands of genes are tested, we adjust the p-values to account for multiple comparisons.
 
@@ -123,7 +124,7 @@ results_all <- results_all |>
   ungroup()
 ```
 
-**3g. Identifying statistically significant genes**
+**3c. Identifying statistically significant genes**
 
 Identify genes with an adjusted p-value below 0.05.
 
@@ -136,7 +137,7 @@ significant_all <- results_all |>
   ))
 ```
 
-**3h. Classifying gene regulation**
+**3d. Classifying gene regulation**
 
 We classify the direction and magnitude of the expression changes using the same effect-size thresholds as the reference study:
 
@@ -221,6 +222,7 @@ ggplot(
     color = "Fungus"
   ) +
   theme_minimal()
+ggsave(filename = "scatplot_baseexpr_vs_estsize.png", path = "../results")
 ```
 
 Each point represents one gene-fungus comparison at one time point.
@@ -266,6 +268,7 @@ ggplot(significant_all, aes(
     color = "Fungus"
   ) +
   theme_minimal()
+ggsave(filename = "density_plot_estimated_effect_size.png", path = "../results")
 ```
 
 In the plot, positive values represent increased expression relative to the control, whereas negative values represent decreased expression. The position and shape of each density curve indicate whether the estimated effects are predominantly positive or negative, and whether they are concentrated around a particular effect size or spread across a wider range.
@@ -315,6 +318,7 @@ ggplot(gene_counts,
   ) +
   scale_y_continuous(labels = scales::percent) +
   theme_minimal()
+ggsave(filename = "stacked_bar_gene_per_fungi.png", path = "../results")
 ```
 
 In it, each bar represents 100% of the significantly regulated genes for each time point and regulation category (upregulated or downregulated) and the different colours show the proportion of genes associated with each fungal stimulus. We added the numbers inside the bars to indicate the actual number of genes for each stimulus, making it possible to compare both the relative proportions and the total number of genes.
@@ -375,6 +379,7 @@ ggplot(
     fill = "Regulation"
   ) +
   theme_minimal()
+ggsave(filename = "common_response.png", path = "../results")
 ```
 
 **5b. Comparing shared genes between time points**
