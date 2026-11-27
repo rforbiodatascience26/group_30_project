@@ -2,19 +2,25 @@
 title: "Human Immune Transcriptional Responses to Pathogenic Fungi"
 subtitle: "Analysis of human gene expression profiles following fungal infection using published count data (GSE162746)"
 author: "Group 30: Anastasia Baltzi, Greta, Martina Ippolito, Swastika, Teo"
+date: "22160 R for Bio Data Science · Technical University of Denmark"
 execute:
   echo: false
 format:
   revealjs:
     theme: default
+    embed-resources: true
     slide-number: true
     transition: fade
-    footer: "22160 R for Bio Data Science · Technical University of Denmark"
-    incremental: false
-editor: visual
 
-resources:
-  - ../results/*.png
+    incremental: false
+    include-in-header:
+      - text: |
+          <style>
+          .reveal { font-size: 30px; }
+          .reveal h1.title { font-size: 1.6em; }
+          .reveal h2 { font-size: 1.1em; }
+          </style>
+editor: visual
 ---
 
 ## Background {.smaller}
@@ -62,7 +68,7 @@ Teo: replace this slide with your descriptive and statistics content. Keep it to
 
 :::: {.columns}
 
-::: {.column width="60%"}
+::: {.column width="50%"}
 
 **Baseline expression vs. estimated effect size**
 
@@ -75,9 +81,9 @@ knitr::include_graphics("../results/scatplot_baseexpr_vs_estsize.png")
 
 :::
 
-::: {.column width="40%"}
+::: {.column width="50%"}
 
-**Proportion of upregulated and downregulated genes**
+**Who drives the response, and in which direction**
 
 ```{r}
 #| echo: false
@@ -88,16 +94,20 @@ knitr::include_graphics("../results/stacked_bar_gene_per_fungi.png")
 
 :::
 
-::::
+:::: {.smaller}
+
+- *R. oryzae* accounts for about 92% of downregulated genes at 4 h and 89% at 24 h, so most of the transcriptional shutdown is specific to this fungus.
+- The upregulated side changes over time: *R. oryzae* gives 66% of upregulated genes at 4 h, but *C. albicans* gives 58% at 24 h.
+- The largest fold changes sit among lowly expressed genes (left of the scatter plot), so strong effects in that range need more caution than moderate changes in highly expressed genes.
 
 <small>
-Statistically significant genes (BH-adjusted q-value < 0.05). Upregulation and downregulation are classified using estimated effects greater than 1 or below -1, respectively.
+Significant genes: BH-adjusted q-value < 0.05. Upregulated and downregulated genes have estimated effects above 1 or below -1.
 </small>
 
 
 ## Shared transcriptional responses across fungi
 
-We identified genes significantly regulated in the same direction by all three fungi at each time point.
+We looked for genes regulated in the same direction by all three fungi, separately at each time point.
 
 :::: {.columns}
 
@@ -123,12 +133,11 @@ knitr::include_graphics("../results/time_overlap.png")
 
 :::
 
-::::
+:::: {.smaller}
 
-**Main observations**
-
-- 49 genes were commonly regulated across the two time points.
-- No genes were shared between the two time points.
+- The early shared response is mostly upregulation (22 up, 15 down), which fits a rapid, general activation of host defence.
+- The late shared response flips to mostly downregulation (9 down, 3 up), so the common programme changes character over time.
+- Only 37 shared genes are specific to 4 h and 12 to 24 h, and none persist at both time points. The fungi share a response, but not a stable one.
 
 
 
