@@ -8,8 +8,6 @@ format: html
 Sequencing identifier associated with the sequencing samples. They look like sequencing run and barcode information Time (4h and 24h) Stimulation (Candita/ Aspergillus / Rhizopus / RPMI(control group)) Samples (8 samples that represent 8 biological replicates/ 8 different human donours) Gene expression data (The nymbers represent the number of sequencing reads assigned to each gene in each sample)
 
 ```{r}
-#| echo: True
-#| eval: False 
 library(tidyverse)
 ```
 
@@ -20,7 +18,7 @@ raw_data <- read_csv("../data/raw_data.csv")
 ```
 
 ```{r}
-View(raw_data)
+head(raw_data, n=10)
 ```
 
 Tidy the dataset:
@@ -74,7 +72,9 @@ metadata <- metadata |>
 
 head(metadata)
 ```
+
 Save the metadata
+
 ```{r}
 write_csv(metadata, "../data/metadata.csv")
 
@@ -93,7 +93,6 @@ Save the counts
 ```{r}
 write_csv(counts, "../data/counts.csv")
 ```
-
 
 6\) Quality check
 

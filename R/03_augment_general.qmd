@@ -44,3 +44,9 @@ counts_long <- counts_log |>
 expression_data <- counts_long |>
   left_join(metadata, by = "sample_id")
 ```
+
+3d. Save augmented data
+
+```{r}
+write_csv(expression_data, "../data/expression_data.csv")
+```
