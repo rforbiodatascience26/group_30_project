@@ -19,6 +19,8 @@ raw_data <- read_csv("../data/raw_data.csv")
 
 ```{r}
 head(raw_data, n=10)
+raw_data<- read_csv("../data/raw_data.csv")
+View(raw_data)
 ```
 
 Tidy the dataset:
@@ -72,6 +74,7 @@ metadata <- metadata |>
 
 head(metadata)
 ```
+5\) Save the metadata
 
 Save the metadata
 
@@ -80,13 +83,21 @@ write_csv(metadata, "../data/metadata.csv")
 
 ```
 
-5\) Get just the mrna counts
+
+6\) Get just the mrna counts
 
 ```{r}
 counts <- raw_data |>
   rename(gene_id = ...1) |>
   filter(str_starts(gene_id, "ENSG"))
 ```
+7\) save the counts
+
+```{r}
+write_csv(counts, "../data/counts.csv")
+
+```
+
 
 Save the counts
 
@@ -94,7 +105,9 @@ Save the counts
 write_csv(counts, "../data/counts.csv")
 ```
 
-6\) Quality check
+
+8\) Quality check
+
 
 ```{r}
 #Any missing value?
@@ -103,6 +116,7 @@ metadata |>
     missing_sample_id = sum(is.na(sample_id)),
     missing_time = sum(is.na(time)),
     missing_stimu = sum(is.na(stimulus)),
+    missing_stimulus = sum(is.na(stimulus)),
     missing_donor = sum(is.na(donor))
   )
 ```
@@ -127,7 +141,7 @@ metadata |>
   count(donor)
 ```
 
-6\) More about quality control
+9\) More about quality control
 
 ```{r}
 # Check duplicated gene IDs
@@ -158,6 +172,7 @@ counts |>
   filter(total_counts == 0)
 
 ```
+
 
 ```{r}
 # how many genes? 

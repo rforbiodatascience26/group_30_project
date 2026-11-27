@@ -1,0 +1,470 @@
+---
+title: "Analysis"
+format: html
+editor: visual
+---
+
+## 
+
+1.  Load libraries
+
+    ```{r}
+    library(tidyverse)
+    library(broom)
+    library(purrr)
+    library(ggrepel)
+    ```
+
+2.  Load datasets
+
+    ```{r}
+    metadata <- read_csv("data/metadata.csv")
+    counts <- read_csv("data/counts.csv")
+    ```
+
+3.  Convert counts into long format
+
+    ```{r}
+    counts_long <- counts |>
+      pivot_longer(
+        cols = -gene_id,
+        names_to = "sample_id",
+        values_to = "count"
+      )
+    ```
+
+4.  Joins count with metadata
+
+    ```{r}
+    counts_aug <- counts_long |>
+      left_join(metadata, by = "sample_id")
+    ```
+
+5.  Checking any missing value
+
+    ```{r}
+    counts_aug |>
+      summarise(
+        total_samples = n_distinct(sample_id),
+        missing_stimulus = sum(is.na(stimulus)),
+        missing_time = sum(is.na(time)),
+        missing_donor = sum(is.na(donor))
+      )
+    ```
+
+6.  Set factors levels
+
+    The order of factor levels determines the reference category in many statistical models.
+
+    ```{r}
+    counts_aug <- counts_aug |>
+      mutate(
+        stimulus = factor(
+          stimulus,
+          levels = c(
+            "Control_group",
+            "C_albicans",
+            "A_fumigatus",
+            "R_oryzae"
+          )
+        ),
+        time = factor(
+          time,
+          levels = c("4h", "24h")
+        ),
+        donor = factor(donor)
+      )
+    ```
+
+7.  Calculate total reads, CPM and log2(CPM + 1)
+
+    CPM means Counts Per Million. Normalizes raw gene counts by the total number of reads in each sample, making expression values comparable across samples with different sequencing depths.
+
+    log2(cpm+1) **:** Applies a log transformation to normalized expression values to reduce skewness, lessen the influence of highly expressed genes, and handle zero counts safely.
+
+    ```{r}
+    counts_aug <- counts_aug |>
+      group_by(sample_id) |>
+      mutate(
+        total_reads = sum(count),
+        cpm = count / total_reads * 1e6,
+        log_cpm = log2(cpm + 1)
+      ) |>
+      ungroup()
+    ```
+
+8.  Check CPM normalisation
+
+    ```{r}
+    cpm_check <- counts_aug |>
+      group_by(sample_id) |>
+      summarise(
+        total_cpm = sum(cpm),
+        .groups = "drop"
+      )
+
+    cpm_check
+    ```
+
+9.  Filter lower expressed genes
+
+    Keeping the genes thta have at least 10 reads in at least 8 samples.
+
+    ```{r}
+    counts_aug <- counts_aug |>
+      group_by(gene_id) |>
+      filter(sum(count >= 10) >= 8) |>
+      ungroup()
+    ```
+
+10. After filtering, how many genes remain
+
+    ```{r}
+    counts_aug |>
+      summarise(number_of_genes = n_distinct(gene_id))
+    ```
+
+11. Select only R.Oryzae and control
+
+    ```{r}
+    counts_oryzae <- counts_aug |>
+      filter(
+        stimulus %in% c("Control_group",
+                        "R_oryzae")
+      )
+    ```
+
+    ```{r}
+    counts_oryzae |>
+      distinct(sample_id, time, stimulus, donor) |>
+      count(time, stimulus)
+    ```
+
+12. Check donor matching
+
+    ```{r}
+    donor_check <- counts_oryzae |>
+      distinct(donor, time, stimulus) |>
+      mutate(value = 1) |>
+      pivot_wider(
+        names_from = stimulus,
+        values_from = value,
+        values_fill = 0
+      )
+    nrow(donor_check)
+
+    ```
+
+13. Removing missing donor
+
+    Because one donor lacked a matching sample in the R. Oryzae group, only complete donor pairs were kept to avoid introducing noise and to ensure accurate donor-matched comparisons in the statistical model.
+
+    ```{r}
+    complete_donors <- donor_check |>
+      filter(
+        Control_group == 1,
+        R_oryzae == 1
+      ) |>
+      select(donor, time)
+
+    counts_oryzae <- counts_oryzae |>
+      semi_join(
+        complete_donors,
+        by = c("time", "donor")
+      )
+    ```
+
+14. Prepare data for modelling
+
+    ```{r}
+    counts_aug_long <- counts_oryzae |>
+      select(
+        gene_id,
+        sample_id,
+        donor,
+        time,
+        stimulus,
+        log_cpm
+      )
+    ```
+
+15. Nest data by gene and time
+
+    ```{r}
+    counts_aug_long_nested <- counts_aug_long |>
+      group_by(gene_id, time) |>
+      nest() |>
+      ungroup()
+
+    counts_aug_long_nested
+    ```
+
+16. Fit linear models
+
+    ```{r}
+    counts_aug_long_nested <- counts_aug_long_nested |>
+      mutate(
+        model_object = map(
+          .x = data,
+          .f = ~ lm(
+            formula = log_cpm ~ donor + stimulus,
+            data = .x
+          )
+        )
+      )
+    ```
+
+We fit one model for each gene at 4h and another at 24h. The model accounts for baseline differences between donors while testing the effect of the stimulus on gene expression.
+
+17. Extract model estimates
+
+    ```{r}
+    counts_aug_long_nested <- counts_aug_long_nested |>
+      mutate(
+        model_object_tidy = map(
+          .x = model_object,
+          .f = ~ tidy(
+            x = .x,
+            conf.int = TRUE,
+            conf.level = 0.95
+          )
+        )
+      )
+    ```
+
+18. Combine model results
+
+    ```{r}
+    gene_estimates <- counts_aug_long_nested |>
+      unnest(model_object_tidy)
+    ```
+
+19. Add gene symbols for the four marker genes
+
+    ```{r}
+    marker_genes <- tibble(
+      gene_id = c(
+        "ENSG00000169429",
+        "ENSG00000125538",
+        "ENSG00000136244",
+        "ENSG00000232810"
+      ),
+      gene_symbol = c(
+        "CXCL8",
+        "IL1B",
+        "IL6",
+        "TNF"
+      )
+    )
+
+    ```
+
+20. Add gene symbols to the gene estimates
+
+    ```{r}
+    gene_estimates <- gene_estimates |>
+      left_join(marker_genes, by = "gene_id")
+    ```
+
+21. Select the R. oryzae effect
+
+    ```{r}
+    gene_estimates <- gene_estimates |>
+      filter(term == "stimulusR_oryzae") |>
+      select(
+        gene_id,
+        gene_symbol,
+        time,
+        p.value,
+        estimate,
+        conf.low,
+        conf.high
+      ) |>
+      ungroup()
+    ```
+
+22. Adjust p-values and identify differentially expressed genes
+
+    P-values were adjusted using the Benjamini-Hochberg method to control the false discovery rate arising from thousands of simultaneous gene-level tests. And genes with q.value \< 0.05 and an absolute estimate \> 1 were classified as differentially expressed, while all others were considered not significant..
+
+    ```{r}
+    gene_estimates <- gene_estimates |>
+      group_by(time) |>
+      mutate(
+        q.value = p.adjust(p.value, method = "BH"),
+        expression = case_when(
+          q.value < 0.05 & estimate > 1 ~ "Upregulated",
+          q.value < 0.05 & estimate < -1 ~ "Downregulated",
+          TRUE ~ "Not significant"
+        )
+      ) |>
+      ungroup()
+    ```
+
+23. Count significant genes:
+
+    ```{r}
+    gene_estimates |>
+      count(time, expression)
+    ```
+
+24. Check number of gene estimates
+
+    ```{r}
+    gene_estimates |>
+      count(time)
+    ```
+
+25. Check missing p-values
+
+    ```{r}
+    gene_estimates |>
+      summarise(
+        total_genes = n(),
+        missing_estimates = sum(is.na(estimate)),
+        missing_pvalues = sum(is.na(p.value))
+      )
+    ```
+
+26. Volcanno plot of gene expression for 4h
+
+    ```{r}
+
+    ggplot(
+      gene_estimates |> filter(time == "4h"),
+      aes(
+        x = estimate,
+        y = -log10(q.value),
+        color = expression
+      )
+    ) +
+
+
+      geom_point(alpha = 0.5, size = 1) +
+
+      
+      scale_color_manual(values = c(
+        "Upregulated" = "red",
+        "Downregulated" = "blue",
+        "Not significant" = "grey"
+      )) +
+
+      # Highlight the four marker genes
+      geom_point(
+        data = gene_estimates |>
+          filter(time == "4h", !is.na(gene_symbol)),
+        aes(x = estimate, y = -log10(q.value)),
+        fill = "yellow",
+        colour = "black",
+        shape = 21,
+        size = 2.5,
+        stroke = 0.8
+      ) +
+
+      # Add gene names
+      geom_text_repel(
+        data = gene_estimates |>
+          filter(time == "4h", !is.na(gene_symbol)),
+        aes(
+          x = estimate,
+          y = -log10(q.value),
+          label = gene_symbol
+        ),
+        color = "black",
+        size = 3,
+        fontface = "bold",
+        max.overlaps = Inf
+      ) +
+
+      
+      geom_vline(
+        xintercept = c(-1, 1),
+        linetype = "dashed"
+      ) +
+
+      geom_hline(
+        yintercept = -log10(0.05),
+        linetype = "dashed"
+      ) +
+
+      labs(
+        title = "Volcano plot: R. oryzae vs Control (4h)",
+        x = "Estimated difference in log2 CPM",
+        y = "-log10 Adjusted p-value",
+        color = "Expression"
+      ) +
+
+      theme_minimal()
+
+    ```
+
+27. Volcano plot of gene expression
+
+    ```{r}
+    ggplot(
+      gene_estimates |> filter(time == "24h"),
+      aes(
+        x = estimate,
+        y = -log10(q.value),
+        color = expression
+      )
+    ) +
+
+      geom_point(
+        alpha = 0.5,
+        size = 1
+      ) +
+
+      scale_color_manual(values = c(
+        "Upregulated" = "red",
+        "Downregulated" = "blue",
+        "Not significant" = "grey"
+      )) +
+
+      # Highlight the four marker genes
+     geom_point(
+        data = gene_estimates |>
+          filter(time == "4h", !is.na(gene_symbol)),
+        aes(x = estimate, y = -log10(q.value)),
+        fill = "yellow",
+        colour = "black",
+        shape = 21,
+        size = 2.5,
+        stroke = 0.8
+      ) +
+
+      # Add gene names
+      geom_text_repel(
+       data = gene_estimates |>
+          filter(time == "24h", !is.na(gene_symbol)),
+        aes(
+          x = estimate,
+          y = -log10(q.value),
+          label = gene_symbol
+        ),
+        colour = "black",
+        size = 3,
+        fontface = "bold",
+        max.overlaps = Inf
+      ) +
+
+      geom_vline(
+        xintercept = c(-1, 1),
+        linetype = "dashed"
+      ) +
+
+      geom_hline(
+        yintercept = -log10(0.05),
+        linetype = "dashed"
+      ) +
+
+      labs(
+        title = "Volcano plot: R. oryzae vs Control (24h)",
+        x = "Estimated difference in log2 CPM",
+        y = "-log10 Adjusted p-value",
+        color = "Expression"
+      ) +
+
+      theme_minimal()
+
+    ```
