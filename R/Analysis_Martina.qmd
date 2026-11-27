@@ -18,6 +18,7 @@ In the second part, the focus shifts to identifying genes that are commonly upre
 Load the packages required for data manipulation, statistical modelling and plotting.
 
 ```{r}
+#| message: False
 library(tidyverse)
 library(broom)
 library(purrr)
@@ -27,6 +28,7 @@ library(ggrepel)
 Loading the files required for this analysis:
 
 ```{r}
+#| message: False
 metadata <- read_csv("../data/metadata.csv")
 expression_data <- read_csv("../data/expression_data.csv")
 ```

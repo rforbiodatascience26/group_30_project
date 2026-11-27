@@ -19,6 +19,7 @@ format:
           .reveal { font-size: 30px; }
           .reveal h1.title { font-size: 1.6em; }
           .reveal h2 { font-size: 1.1em; }
+          .reveal .slides section img { max-height: 340px; width: auto; }
           </style>
 editor: visual
 ---
@@ -70,8 +71,6 @@ Teo: replace this slide with your descriptive and statistics content. Keep it to
 
 ::: {.column width="50%"}
 
-**Baseline expression vs. estimated effect size**
-
 ```{r}
 #| echo: false
 #| out-width: "100%"
@@ -83,8 +82,6 @@ knitr::include_graphics("../results/scatplot_baseexpr_vs_estsize.png")
 
 ::: {.column width="50%"}
 
-**Who drives the response, and in which direction**
-
 ```{r}
 #| echo: false
 #| out-width: "100%"
@@ -94,20 +91,20 @@ knitr::include_graphics("../results/stacked_bar_gene_per_fungi.png")
 
 :::
 
-:::: {.smaller}
+::::
 
+<div style="font-size: 0.75em;">
+
+- Significant genes: BH-adjusted q-value < 0.05. Upregulated and downregulated genes have estimated effects above 1 or below -1.
 - *R. oryzae* accounts for about 92% of downregulated genes at 4 h and 89% at 24 h, so most of the transcriptional shutdown is specific to this fungus.
 - The upregulated side changes over time: *R. oryzae* gives 66% of upregulated genes at 4 h, but *C. albicans* gives 58% at 24 h.
-- The largest fold changes sit among lowly expressed genes (left of the scatter plot), so strong effects in that range need more caution than moderate changes in highly expressed genes.
 
-<small>
-Significant genes: BH-adjusted q-value < 0.05. Upregulated and downregulated genes have estimated effects above 1 or below -1.
-</small>
 
+</div>
 
 ## Shared transcriptional responses across fungi
 
-We looked for genes regulated in the same direction by all three fungi, separately at each time point.
+Genes regulated in the same direction by all three fungi,<br> separately at each time point
 
 :::: {.columns}
 
@@ -133,11 +130,15 @@ knitr::include_graphics("../results/time_overlap.png")
 
 :::
 
-:::: {.smaller}
+::::
 
-- The early shared response is mostly upregulation (22 up, 15 down), which fits a rapid, general activation of host defence.
-- The late shared response flips to mostly downregulation (9 down, 3 up), so the common programme changes character over time.
+<div style="font-size: 0.75em;">
+
+- The early shared response is mostly upregulation, which fits a rapid, general activation of host defence.
+- The late shared response flips to mostly downregulation, so the common programme changes character over time.
 - Only 37 shared genes are specific to 4 h and 12 to 24 h, and none persist at both time points. The fungi share a response, but not a stable one.
+
+</div>
 
 
 
