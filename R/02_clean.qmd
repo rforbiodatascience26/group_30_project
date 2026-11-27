@@ -74,9 +74,8 @@ metadata <- metadata |>
 
 head(metadata)
 ```
-5\) Save the metadata
 
-Save the metadata
+5\) Save the metadata
 
 ```{r}
 write_csv(metadata, "../data/metadata.csv")
@@ -97,14 +96,6 @@ counts <- raw_data |>
 write_csv(counts, "../data/counts.csv")
 
 ```
-
-
-Save the counts
-
-```{r}
-write_csv(counts, "../data/counts.csv")
-```
-
 
 8\) Quality check
 
