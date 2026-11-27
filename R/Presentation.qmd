@@ -1,7 +1,7 @@
 ---
 title: "Human Immune Transcriptional Responses to Pathogenic Fungi"
 subtitle: "Analysis of human gene expression profiles following fungal infection using published count data (GSE162746)"
-author: "Group 30: Anastasia Baltzi, Greta, Martina, Swastika, Teo"
+author: "Group 30: Anastasia Baltzi, Greta, Martina Ippolito, Swastika, Teo"
 execute:
   echo: false
 format:
@@ -12,6 +12,9 @@ format:
     footer: "22160 R for Bio Data Science · Technical University of Denmark"
     incremental: false
 editor: visual
+
+resources:
+  - ../results/*.png
 ---
 
 ## Background {.smaller}
@@ -54,42 +57,80 @@ About 1 minute. Read out the three research questions. The rest of the talk foll
 Teo: replace this slide with your descriptive and statistics content. Keep it to 1 to 3 slides, and reduce the deck to 10 slides in total if you add more.
 :::
 
+
 ## Individual gene expression responses
 
-::::: columns
+:::: {.columns}
+
 ::: {.column width="60%"}
+
 **Baseline expression vs. estimated effect size**
 
-![](../results/scatplot_baseexpr_vs_estsize.png){width="100%"}
+```{r}
+#| echo: false
+#| out-width: "100%"
+
+knitr::include_graphics("../results/scatplot_baseexpr_vs_estsize.png")
+```
+
 :::
 
 ::: {.column width="40%"}
+
 **Proportion of upregulated and downregulated genes**
 
-![](../results/stacked_bar_gene_per_fungi.png){width="100%"}
-:::
-:::::
+```{r}
+#| echo: false
+#| out-width: "100%"
 
-<small> Statistically significant genes (BH-adjusted q-value \< 0.05). Upregulation and downregulation are classified using estimated effects greater than 1 or below -1, respectively. </small>
+knitr::include_graphics("../results/stacked_bar_gene_per_fungi.png")
+```
+
+:::
+
+::::
+
+<small>
+Statistically significant genes (BH-adjusted q-value < 0.05). Upregulation and downregulation are classified using estimated effects greater than 1 or below -1, respectively.
+</small>
+
 
 ## Shared transcriptional responses across fungi
 
 We identified genes significantly regulated in the same direction by all three fungi at each time point.
 
-::::: columns
+:::: {.columns}
+
 ::: {.column width="50%"}
-![](../results/common_response.png){width="100%"}
+
+```{r}
+#| echo: false
+#| out-width: "100%"
+
+knitr::include_graphics("../results/common_response.png")
+```
+
 :::
 
 ::: {.column width="50%"}
-![](../results/time_overlap.png){width="100%"}
+
+```{r}
+#| echo: false
+#| out-width: "100%"
+
+knitr::include_graphics("../results/time_overlap.png")
+```
+
 :::
-:::::
+
+::::
 
 **Main observations**
 
 - 49 genes were commonly regulated across the two time points.
 - No genes were shared between the two time points.
+
+
 
 ## Greta: *C. albicans* against control {.smaller}
 

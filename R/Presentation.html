@@ -9,7 +9,7 @@
 <link href="Presentation_files/libs/quarto-html/quarto-syntax-highlighting-bf27225e3a48a9273f3daa8f8e829971.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
   <meta name="generator" content="quarto-1.10.19">
 
-  <meta name="author" content="Group 30: Anastasia Baltzi, Greta, Martina, Swastika, Teo">
+  <meta name="author" content="Group 30: Anastasia Baltzi, Greta, Martina Ippolito, Swastika, Teo">
   <title>Human Immune Transcriptional Responses to Pathogenic Fungi</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -139,7 +139,7 @@
 <div class="quarto-title-authors">
 <div class="quarto-title-author">
 <div class="quarto-title-author-name">
-Group 30: Anastasia Baltzi, Greta, Martina, Swastika, Teo
+Group 30: Anastasia Baltzi, Greta, Martina Ippolito, Swastika, Teo
 </div>
 </div>
 </div>
@@ -217,10 +217,26 @@ Group 30: Anastasia Baltzi, Greta, Martina, Swastika, Teo
 <div class="columns">
 <div class="column" style="width:60%;">
 <p><strong>Baseline expression vs.&nbsp;estimated effect size</strong></p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure>
 <p><img data-src="../results/scatplot_baseexpr_vs_estsize.png" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
 </div><div class="column" style="width:40%;">
 <p><strong>Proportion of upregulated and downregulated genes</strong></p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure>
 <p><img data-src="../results/stacked_bar_gene_per_fungi.png" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
 </div></div>
 <p><small> Statistically significant genes (BH-adjusted q-value &lt; 0.05). Upregulation and downregulation are classified using estimated effects greater than 1 or below -1, respectively. </small></p>
 </section>
@@ -229,9 +245,25 @@ Group 30: Anastasia Baltzi, Greta, Martina, Swastika, Teo
 <p>We identified genes significantly regulated in the same direction by all three fungi at each time point.</p>
 <div class="columns">
 <div class="column" style="width:50%;">
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure>
 <p><img data-src="../results/common_response.png" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
 </div><div class="column" style="width:50%;">
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure>
 <p><img data-src="../results/time_overlap.png" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
 </div></div>
 <p><strong>Main observations</strong></p>
 <ul>
@@ -580,6 +612,82 @@ Group 30: Anastasia Baltzi, Greta, Martina, Swastika, Teo
         ]
       });
     </script>
+    
+
+    <script>
+
+      // htmlwidgets need to know to resize themselves when slides are shown/hidden.
+
+      // Fire the "slideenter" event (handled by htmlwidgets.js) when the current
+
+      // slide changes (different for each slide format).
+
+      (function () {
+
+        // dispatch for htmlwidgets
+
+        function fireSlideEnter() {
+
+          const event = window.document.createEvent("Event");
+
+          event.initEvent("slideenter", true, true);
+
+          window.document.dispatchEvent(event);
+
+        }
+
+    
+
+        function fireSlideChanged(previousSlide, currentSlide) {
+
+          fireSlideEnter();
+
+    
+
+          // dispatch for shiny
+
+          if (window.jQuery) {
+
+            if (previousSlide) {
+
+              window.jQuery(previousSlide).trigger("hidden");
+
+            }
+
+            if (currentSlide) {
+
+              window.jQuery(currentSlide).trigger("shown");
+
+            }
+
+          }
+
+        }
+
+    
+
+        // hookup for slidy
+
+        if (window.w3c_slidy) {
+
+          window.w3c_slidy.add_observer(function (slide_num) {
+
+            // slide_num starts at position 1
+
+            fireSlideChanged(null, w3c_slidy.slides[slide_num - 1]);
+
+          });
+
+        }
+
+    
+
+      })();
+
+    </script>
+
+    
+
     <script id="quarto-html-after-body" type="application/javascript">
       window.document.addEventListener("DOMContentLoaded", function (event) {
         const tabsets =  window.document.querySelectorAll(".panel-tabset-tabby")
