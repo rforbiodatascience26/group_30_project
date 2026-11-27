@@ -5,7 +5,8 @@ editor: visual
 ---
 
 ```{r}
-#| echo: False
+#|echo: False
+#|eval: False
 library(tidyverse)
 library(readr)
 ```
@@ -15,7 +16,8 @@ library(readr)
 Load metadata and mRNA counts
 
 ```{r}
-
+#|echo: False
+#|eval: False
 metadata <- read_csv("../data/metadata.csv")
 counts <- read_csv("../data/counts.csv")
 ```
@@ -30,7 +32,7 @@ We use counts per million (CPM), followed by a log2 transformation. Adding 1 pre
 counts_log <- counts |>
   mutate(across(
       -gene_id,
-      ~ log2((.x / sum(.x)) * 1000000 + 1) #log2tranformation of CPM
+      ~ log2((.x / sum(.x)) * 1000000 + 1) #log2transformation of CPM
     )
   )
 ```
@@ -56,7 +58,7 @@ expression_data <- counts_long |>
 ```
 
 
-# Analysis of Candida albicans versus control group\`\`
+# Analysis of Candida albicans versus control group
 
 ## From the main datatable pulling only the data necesery for analysis:
 
@@ -64,21 +66,18 @@ Filtering expression data based on fungi, control group and time
 
 #Table 1
 
-
-
 ```{r}
 candida_4h <- expression_data |>
   filter(
     time == "4h",
     stimulus %in% c("C_albicans", "Control_group")
   )
-
 ```
 
 #Table 2
 
 ```{r}
-candida_24h <-  expression_data |>
+candida_24h <- expression_data |>
   filter(
     time == "24h",
     stimulus %in% c("C_albicans", "Control_group")
@@ -213,7 +212,6 @@ candida_24h_split[[1]]
 ```
 
 
-
 ### Fit a linear model for the first gene
 
 ```{r}
@@ -343,11 +341,16 @@ C. albicans differentially regulated 1055 transcripts at 4 h:
 Downregulated: 234
 Upregulated: 821 
 
-### My results 4 h: 
+### My results 4 h vs artickle: 
 
 ```{r}
-results_4h |>
-  count(regulation)
+results_4h_vs_artickle <- results_4h |>
+  count(regulation, name = "Current_analysis_results")
+
+results_4h_vs_artickle <- results_4h_vs_artickle |>
+  mutate (Artickle_analysis_result = c(234, NA, 821))
+
+results_4h_vs_artickle
 ```
 
 #### For 24 h data:
@@ -373,7 +376,7 @@ results_24h <- results_24h |>
 ```
 
 
-### Data from the artickle 4 h: 
+### Data from the artickle 24 h: 
 
 Transcripts that exhibited a Log2fold change >1 or <−1 compared to unstimulated PBMCs and an adjusted p-value of < 0.05 were considered differentially regulated.
 
@@ -386,8 +389,49 @@ Upregulated:  1733
 ### My results 24 h:
 
 ```{r}
-results_24h |>
-  count(regulation)
+results_24h_vs_artickle <- results_24h |>
+  count(regulation, name = "Current_analysis_results")
+
+results_24h_vs_artickle <- results_24h_vs_artickle |>
+  mutate (Artickle_analysis_result = c(715, NA, 1733))
+
+results_24h_vs_artickle
+```
+
+## For further analysis 4 genes conected with Cytokine response in fungi were chosen. IL1B, TNF, CXCL8, IL6 
+
+```{r}
+#Adding a column to name genes them
+results_4h <- results_4h |>
+  mutate(
+    gene_name = case_when(
+      gene_id == "ENSG00000125538" ~ "IL1B",   #Interleukin beta
+      gene_id == "ENSG00000232810" ~ "TNF",    #Tumor necrosis factor
+      gene_id == "ENSG00000169429" ~ "CXCL8",  #Interleukin-8 (IL-8)
+      gene_id == "ENSG00000136244" ~ "IL6",    #Interleukin-6
+      TRUE ~ NA_character_
+    )
+  )
+
+```
+
+```{r}
+#Adding a column to name genes them
+results_24h <- results_24h |>
+  mutate(
+    gene_name = case_when(
+      gene_id == "ENSG00000125538" ~ "IL1B",   #Interleukin beta
+      gene_id == "ENSG00000232810" ~ "TNF",    #Tumor necrosis factor
+      gene_id == "ENSG00000169429" ~ "CXCL8",  #Interleukin-8 (IL-8)
+      gene_id == "ENSG00000136244" ~ "IL6",    #Interleukin-6
+      TRUE ~ NA_character_
+    )
+  )
+```
+
+
+```{r}
+genes_to_highlight <- c("IL1B", "TNF", "CXCL8", "IL6")
 ```
 
 
@@ -403,6 +447,23 @@ ggplot(results_4h,
     "Downregulated" = "blue",
     "Not significant" = "grey"
   )) +
+  geom_point(
+    data = results_4h |> 
+      filter(gene_name %in% genes_to_highlight),
+    aes(x = log2FC, y = -log10(adjusted_p_value)),
+    fill = "yellow",
+    colour = "black",
+    shape = 21,
+    size = 2.5,
+    stroke = 0.8
+  ) +
+  geom_text(
+    data = results_4h |>
+      filter(gene_name %in% genes_to_highlight),
+    aes (label = gene_name),
+    vjust = -1,
+    size = 3
+  ) +
   geom_vline(xintercept = c(-1, 1), linetype = "dashed") +
   geom_hline(yintercept = -log10(0.05), linetype = "dashed") +
   labs(
@@ -425,6 +486,23 @@ ggplot(results_24h,
     "Downregulated" = "blue",
     "Not significant" = "grey"
   )) +
+  geom_point(
+    data = results_24h |> 
+      filter(gene_name %in% genes_to_highlight),
+    aes(x = log2FC, y = -log10(adjusted_p_value)),
+    fill = "yellow",
+    colour = "black",
+    shape = 21,
+    size = 2.5,
+    stroke = 0.8
+  ) +
+  geom_text(
+    data = results_24h |>
+      filter(gene_name %in% genes_to_highlight),
+    aes (label = gene_name),
+    vjust = -1,
+    size = 3
+  ) +
   geom_vline(xintercept = c(-1, 1), linetype = "dashed") +
   geom_hline(yintercept = -log10(0.05), linetype = "dashed") +
   labs(
