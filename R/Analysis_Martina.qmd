@@ -1,6 +1,8 @@
 ---
 title: "Analysis_Martina"
 format: html
+execute:
+  message: False
 ---
 
 # Comparison of gene expression responses to three fungal species
@@ -384,18 +386,18 @@ ggsave(filename = "common_response.png", path = "../results")
 
 **5b. Comparing shared genes between time points**
 
-Determine whether the genes commonly regulated by all three fungi at 4h are also commonly regulated at 24h.
+Similarly to the paper, we tried to determine whether the genes commonly regulated by all three fungi at 4h are also commonly regulated at 24h.
 
-First, we need to extract the unique upregulated genes at each time point.
+First, we extract the unique genes at each time point, regardless of their regulation.
 
 ```{r}
 genes_4h <- shared_genes |>
   filter(time == "4h") |>
-  distinct(gene_id, regulation)
+  distinct(gene_id)
 
 genes_24h <- shared_genes |>
   filter(time == "24h") |>
-  distinct(gene_id, regulation)
+  distinct(gene_id)
 ```
 
 Then we can use an inner join to identify genes present at both time points, and anti-joins to identify genes found at only one time point.
@@ -442,6 +444,8 @@ time_overlap
 We plotted these results in a simple bar plot:
 
 ```{r}
+time_overlap <- time_overlap |>
+  mutate(category = factor(category, levels = c("4h only", "24h only", "Both time points")))
 ggplot(time_overlap, aes(x = category, y = n_genes, fill = category)) +
   geom_col(width = 0.7) +
   ylim(0,40) +
@@ -453,6 +457,7 @@ ggplot(time_overlap, aes(x = category, y = n_genes, fill = category)) +
   ) +
   theme_minimal() +
   theme(legend.position = "none")
+ggsave(filename = "time_overlap.png", path = "../results")
 ```
 
 ## 6. Volcano plot of the shared genes

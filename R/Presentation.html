@@ -212,83 +212,32 @@ Group 30: Anastasia Baltzi, Greta, Martina, Swastika, Teo
           display:block!important;
       }</style></aside>
 </section>
-<section id="martina-regulated-genes-per-fungus" class="slide level2 smaller">
-<h2>Martina: regulated genes per fungus</h2>
-<p>Linear model per gene, adjusted for donor, with BH correction (q &lt; 0.05) and an effect size threshold of ±1.</p>
-<table class="caption-top">
-<thead>
-<tr class="header">
-<th>Fungus</th>
-<th style="text-align: right;">4 h up</th>
-<th style="text-align: right;">4 h down</th>
-<th style="text-align: right;">24 h up</th>
-<th style="text-align: right;">24 h down</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><em>C. albicans</em></td>
-<td style="text-align: right;">386</td>
-<td style="text-align: right;">202</td>
-<td style="text-align: right;">773</td>
-<td style="text-align: right;">473</td>
-</tr>
-<tr class="even">
-<td><em>A. fumigatus</em></td>
-<td style="text-align: right;">106</td>
-<td style="text-align: right;">164</td>
-<td style="text-align: right;">39</td>
-<td style="text-align: right;">11</td>
-</tr>
-<tr class="odd">
-<td><em>R. oryzae</em></td>
-<td style="text-align: right;">955</td>
-<td style="text-align: right;">3978</td>
-<td style="text-align: right;">517</td>
-<td style="text-align: right;">3794</td>
-</tr>
-</tbody>
-</table>
-<ul>
-<li><em>R. oryzae</em> regulates the most genes at both time points, mostly downward</li>
-<li><em>A. fumigatus</em> gives the weakest response</li>
-<li><em>C. albicans</em> shifts towards upregulation at 24 h</li>
-</ul>
-<aside class="notes">
-<p>About 1 minute. Martina’s analysis, Analysis_Martina.qmd. Counts are genes significantly regulated for each fungus, time point and direction. The threshold is an estimated log2 change above 1 or below −1 on the CPM scale.</p>
-<style type="text/css">
-        span.MJX_Assistive_MathML {
-          position:absolute!important;
-          clip: rect(1px, 1px, 1px, 1px);
-          padding: 1px 0 0 0!important;
-          border: 0!important;
-          height: 1px!important;
-          width: 1px!important;
-          overflow: hidden!important;
-          display:block!important;
-      }</style></aside>
+<section id="individual-gene-expression-responses" class="slide level2">
+<h2>Individual gene expression responses</h2>
+<div class="columns">
+<div class="column" style="width:60%;">
+<p><strong>Baseline expression vs.&nbsp;estimated effect size</strong></p>
+<p><img data-src="../results/scatplot_baseexpr_vs_estsize.png" style="width:100.0%"></p>
+</div><div class="column" style="width:40%;">
+<p><strong>Proportion of upregulated and downregulated genes</strong></p>
+<p><img data-src="../results/stacked_bar_gene_per_fungi.png" style="width:100.0%"></p>
+</div></div>
+<p><small> Statistically significant genes (BH-adjusted q-value &lt; 0.05). Upregulation and downregulation are classified using estimated effects greater than 1 or below -1, respectively. </small></p>
 </section>
-<section id="martina-genes-shared-by-all-three-fungi" class="slide level2 smaller">
-<h2>Martina: genes shared by all three fungi</h2>
-
-<img data-src="images/martina-shared-bar.png" style="width:55.0%" class="r-stretch quarto-figure-center"><p class="caption">Genes regulated in the same direction by all three fungi</p><ul>
-<li>49 genes are shared in total: 37 at 4 h and 12 at 24 h</li>
-<li>No gene is shared across both time points</li>
-<li>Most shared genes at 4 h are upregulated (22 up, 15 down)</li>
+<section id="shared-transcriptional-responses-across-fungi" class="slide level2">
+<h2>Shared transcriptional responses across fungi</h2>
+<p>We identified genes significantly regulated in the same direction by all three fungi at each time point.</p>
+<div class="columns">
+<div class="column" style="width:50%;">
+<p><img data-src="../results/common_response.png" style="width:100.0%"></p>
+</div><div class="column" style="width:50%;">
+<p><img data-src="../results/time_overlap.png" style="width:100.0%"></p>
+</div></div>
+<p><strong>Main observations</strong></p>
+<ul>
+<li>49 genes were commonly regulated across the two time points.</li>
+<li>No genes were shared between the two time points.</li>
 </ul>
-<aside class="notes">
-<p>About 1 minute. Shared genes are those regulated in the same direction by all three fungi at one time point. The overlap table gives 37 genes unique to 4 h, 12 unique to 24 h and 0 in both.</p>
-<style type="text/css">
-        span.MJX_Assistive_MathML {
-          position:absolute!important;
-          clip: rect(1px, 1px, 1px, 1px);
-          padding: 1px 0 0 0!important;
-          border: 0!important;
-          height: 1px!important;
-          width: 1px!important;
-          overflow: hidden!important;
-          display:block!important;
-      }</style></aside>
 </section>
 <section id="greta-c.-albicans-against-control" class="slide level2 smaller">
 <h2>Greta: <em>C. albicans</em> against control</h2>

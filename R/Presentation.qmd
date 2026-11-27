@@ -54,35 +54,42 @@ About 1 minute. Read out the three research questions. The rest of the talk foll
 Teo: replace this slide with your descriptive and statistics content. Keep it to 1 to 3 slides, and reduce the deck to 10 slides in total if you add more.
 :::
 
-## Martina: regulated genes per fungus {.smaller}
+## Individual gene expression responses
 
-Linear model per gene, adjusted for donor, with BH correction (q \< 0.05) and an effect size threshold of ±1.
+::::: columns
+::: {.column width="60%"}
+**Baseline expression vs. estimated effect size**
 
-| Fungus         | 4 h up | 4 h down | 24 h up | 24 h down |
-|----------------|-------:|---------:|--------:|----------:|
-| *C. albicans*  |    386 |      202 |     773 |       473 |
-| *A. fumigatus* |    106 |      164 |      39 |        11 |
-| *R. oryzae*    |    955 |     3978 |     517 |      3794 |
-
-- *R. oryzae* regulates the most genes at both time points, mostly downward
-- *A. fumigatus* gives the weakest response
-- *C. albicans* shifts towards upregulation at 24 h
-
-::: notes
-About 1 minute. Martina's analysis, Analysis_Martina.qmd. Counts are genes significantly regulated for each fungus, time point and direction. The threshold is an estimated log2 change above 1 or below −1 on the CPM scale.
+![](../results/scatplot_baseexpr_vs_estsize.png){width="100%"}
 :::
 
-## Martina: genes shared by all three fungi {.smaller}
+::: {.column width="40%"}
+**Proportion of upregulated and downregulated genes**
 
-![Genes regulated in the same direction by all three fungi](images/martina-shared-bar.png){width="55%"}
-
-- 49 genes are shared in total: 37 at 4 h and 12 at 24 h
-- No gene is shared across both time points
-- Most shared genes at 4 h are upregulated (22 up, 15 down)
-
-::: notes
-About 1 minute. Shared genes are those regulated in the same direction by all three fungi at one time point. The overlap table gives 37 genes unique to 4 h, 12 unique to 24 h and 0 in both.
+![](../results/stacked_bar_gene_per_fungi.png){width="100%"}
 :::
+:::::
+
+<small> Statistically significant genes (BH-adjusted q-value \< 0.05). Upregulation and downregulation are classified using estimated effects greater than 1 or below -1, respectively. </small>
+
+## Shared transcriptional responses across fungi
+
+We identified genes significantly regulated in the same direction by all three fungi at each time point.
+
+::::: columns
+::: {.column width="50%"}
+![](../results/common_response.png){width="100%"}
+:::
+
+::: {.column width="50%"}
+![](../results/time_overlap.png){width="100%"}
+:::
+:::::
+
+**Main observations**
+
+- 49 genes were commonly regulated across the two time points.
+- No genes were shared between the two time points.
 
 ## Greta: *C. albicans* against control {.smaller}
 
