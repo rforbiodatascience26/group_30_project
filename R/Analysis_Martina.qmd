@@ -25,86 +25,24 @@ library(ggrepel)
 Loading the files required for this analysis:
 
 ```{r}
-counts <- read_csv("../data/counts.csv")
 metadata <- read_csv("../data/metadata.csv")
+expression_data <- read_csv("../data/expression_data.csv")
 ```
 
-#### **1) Removing genes with zero counts in every sample**
+## 2. Data preparation: one extra step
 
-Remove genes that have no reads in any sample, since they do not provide information for the expression analysis.
-
-First of all, calculate the total number of counts for each gene across all samples (no need to covert any value as they already are \<dbl\> = double, numeric values)
+For this analysis we start by removing genes with zero expression across all samples, as they do not provide information for the subsequent statistical analysis. In particular, we calculate the total expression for each gene and retain only those with a total greater than zero:
 
 ```{r}
-counts <- counts |>
-  mutate(total_counts = rowSums(across(-gene_id)))
+expression_data <- expression_data |>
+  group_by(gene_id) |>
+  summarise(total_expression = sum(expression)) |>
+  filter(total_expression > 0) |>
+  select(gene_id) |>
+  inner_join(expression_data, by = "gene_id")
 ```
 
-And then count how many genes have zero counts across all samples.
-
-```{r}
-counts |>
-  filter(total_counts == 0) |>
-  nrow()
-```
-
-We find out that 18942 genes have 0 counts out of 61893.
-
-Then it becomes possible to remove such genes with zero total counts and discard the temporary column used for filtering. And also check the dimensions of the filtered dataset to see how many genes and sample columns remain:
-
-```{r}
-counts_no0 <- counts |>
-  filter(total_counts > 0) |>
-  select(-total_counts)
-dim(counts_no0)
-```
-
-After this first extra cleaning step, 42951 genes remain, each analysed in 64 different conditions.
-
-#### **2) Identify upregulated and downregulated genes**
-
-In the second part of the "initialization" step, we are interested in normalizing the raw counts and reorganizing the data into a tidy format combined with sample metadata for further analysis.
-
-**3a. Normalising and transforming the counts**
-
-Convert raw counts into a normalised expression measure that can be used for exploratory analysis.
-
-We use counts per million (CPM), followed by a log2 transformation. Adding 1 prevents taking the logarithm of zero:
-
-```{r}
-counts_log <- counts_no0 |>
-  mutate(across(
-      -gene_id,
-      ~ log2((.x / sum(.x)) * 1000000 + 1) #log2tranformation of CPM
-    )
-  )
-```
-
-**3b. Reshaping the expression table**
-
-Each sample is currently represented by a separate column. We reshape the table into long format, so that each row represents the expression of one gene in one sample.
-
-```{r}
-counts_long <- counts_log |>
-  pivot_longer(
-    cols = -gene_id,
-    names_to = "sample_id",
-    values_to = "expression"
-  )
-```
-
-**3c. Combining expression values with sample metadata**
-
-Finally, we combine the gene expression and the metadata.
-
-```{r}
-expression_data <- counts_long |>
-  left_join(metadata, by = "sample_id")
-```
-
-So now the table is tidy and it's possible to continue with the analysis.
-
-**3d. Preparing the data for statistical modelling**
+## 3. Significative and non-significative genes
 
 We want to identify statistically significative genes whose expression changes following fungal stimulation compared with the control condition.
 
@@ -123,9 +61,9 @@ expression_all_time_points <- expression_data |>
   )
 ```
 
-**3e. Fitting linear models**
+**3a. Fitting linear models**
 
-We want to estimate the effect of each fungal stimulus on gene expression (relative to the control) while accounting for donor-to-donor variation (for differences in baseline expression between donors). One of the assumptions of our model is that the fungal stimulation effect is broadly consistent across donors.
+To estimate the effect of each fungal stimulus on gene expression (relative to the control) while accounting for donor-to-donor variation (for differences in baseline expression between donors), we made the our model assume that the fungal stimulation effect is broadly consistent across donors.
 
 We fit a separate linear model for each gene at each time point,
 
