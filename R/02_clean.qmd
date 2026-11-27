@@ -4,19 +4,21 @@ format: html
 ---
 
 # Description of data variables:
-Sequencing identifier associated with the sequencing samples. They look like sequencing run and barcode information
-Time (4h and 24h) 
-Stimulation (Candita/ Aspergillus / Rhizopus / RPMI(control group))
-Samples (8 samples that represent 8 biological replicates/ 8 different human donours)
-Gene expression data (The nymbers represent the number of sequencing reads assigned to each gene in each sample)
+
+Sequencing identifier associated with the sequencing samples. They look like sequencing run and barcode information Time (4h and 24h) Stimulation (Candita/ Aspergillus / Rhizopus / RPMI(control group)) Samples (8 samples that represent 8 biological replicates/ 8 different human donours) Gene expression data (The nymbers represent the number of sequencing reads assigned to each gene in each sample)
 
 ```{r}
 library(tidyverse)
 ```
 
-Inspect the dataset
+Load the raw_data and inspect the dataset
 
 ```{r}
+raw_data <- read_csv("../data/raw_data.csv")
+```
+
+```{r}
+head(raw_data, n=10)
 raw_data<- read_csv("../data/raw_data.csv")
 View(raw_data)
 ```
@@ -74,6 +76,8 @@ head(metadata)
 ```
 5\) Save the metadata
 
+Save the metadata
+
 ```{r}
 write_csv(metadata, "../data/metadata.csv")
 
@@ -95,7 +99,15 @@ write_csv(counts, "../data/counts.csv")
 ```
 
 
+Save the counts
+
+```{r}
+write_csv(counts, "../data/counts.csv")
+```
+
+
 8\) Quality check
+
 
 ```{r}
 #Any missing value?
@@ -103,6 +115,7 @@ metadata |>
   summarise(
     missing_sample_id = sum(is.na(sample_id)),
     missing_time = sum(is.na(time)),
+    missing_stimu = sum(is.na(stimulus)),
     missing_stimulus = sum(is.na(stimulus)),
     missing_donor = sum(is.na(donor))
   )

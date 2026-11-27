@@ -1,0 +1,515 @@
+---
+title: "Analysis_Martina"
+format: html
+execute:
+  message: False
+---
+
+# Comparison of gene expression responses to three fungal species
+
+This analysis focuses on how gene expression changes following stimulation with three different fungal species: *Candida albicans*, *Aspergillus fumigatus* and *Rhizopus oryzae*. The aim is to identify and compare the genes that are significantly upregulated or downregulated after fungal stimulation compared with the RPMI control group, while also taking into account differences between donors.
+
+The analysis considers two time points, 4 h and 24 h, to see how the responses change over time. First, the individual responses to each fungal species are analysed and compared using different plots to explore the magnitude and direction of gene expression changes.
+
+In the second part, the focus shifts to identifying genes that are commonly upregulated or downregulated by all three fungi at each time point. Finally, the overlap between 4 h and 24 h is investigated to determine whether the same genes are commonly regulated at both time points. This allows us to explore both the differences between the fungal responses and the genes that may be involved in a shared response to fungal stimulation.
+
+## 1. Initialization
+
+Load the packages required for data manipulation, statistical modelling and plotting.
+
+```{r}
+#| message: False
+library(tidyverse)
+library(broom)
+library(purrr)
+library(ggrepel)
+```
+
+Loading the files required for this analysis:
+
+```{r}
+#| message: False
+metadata <- read_csv("../data/metadata.csv")
+expression_data <- read_csv("../data/expression_data.csv")
+```
+
+## 2. Data preparation: one extra step
+
+For this analysis we start by removing genes with zero expression across all samples, as they do not provide information for the subsequent statistical analysis. In particular, we calculate the total expression for each gene and retain only those with a total greater than zero:
+
+```{r}
+expression_data <- expression_data |>
+  group_by(gene_id) |>
+  summarise(total_expression = sum(expression)) |>
+  filter(total_expression > 0) |>
+  select(gene_id) |>
+  inner_join(expression_data, by = "gene_id")
+head(expression_data)
+```
+
+## 3. Significative and non-significative genes
+
+We want to identify statistically significative genes whose expression changes following fungal stimulation compared with the control condition.
+
+The control group is used as the reference category. This means that the estimated effect of each fungal stimulus represents its expression change relative to the control.
+
+Moreover, donor is also included as a categorical variable to account for differences in baseline gene expression between individuals.
+
+```{r}
+expression_all_time_points <- expression_data |>
+  mutate(
+    stimulus = fct_relevel(  # set RPMI control as reference
+      as_factor(stimulus),
+      "Control_group"
+    ),
+    donor = as_factor(donor) # convert donors into discrete experimental grouping variable
+  )
+```
+
+**3a. Fitting linear models**
+
+To estimate the effect of each fungal stimulus on gene expression (relative to the control) while accounting for donor-to-donor variation (for differences in baseline expression between donors), we made the our model assume that the fungal stimulation effect is broadly consistent across donors.
+
+We fit a separate linear model for each gene at each time point,
+
+```{r}
+expression_all_nested <- expression_all_time_points |>
+  group_by(gene_id, time) |>
+  nest() |>
+  mutate(
+    model_object = map(
+      data,
+      ~ lm(
+        formula = expression ~ donor + stimulus,
+        data = .x
+      )
+    )
+  )
+```
+
+extract the coefficients and statistical results from each fitted model...
+
+```{r}
+expression_all_nested <- expression_all_nested |>
+  mutate(
+    model_results = map(model_object, tidy)
+  )
+```
+
+...and combine the results into a single table, retaining the gene identifier, time point and statistics.
+
+```{r}
+results_all <- expression_all_nested |>
+  select(gene_id, time, model_results) |>
+  unnest(model_results)
+```
+
+We want to retain only the coefficients associated with fungal stimulation. The donor coefficients are not needed for the subsequent analysis, so we do not select it.
+
+```{r}
+results_all <- results_all |>
+  filter(str_starts(term, "stimulus")) 
+```
+
+```{r}
+head(results_all, n=10)
+```
+
+**3b. Correcting for multiple testing**
+
+Since thousands of genes are tested, we adjust the p-values to account for multiple comparisons.
+
+The Benjamini-Hochberg method is applied separately for each fungal stimulus and time point. The resulting adjusted p-values are stored in q.value.
+
+```{r}
+results_all <- results_all |>
+  group_by(time, term) |>
+  mutate(q.value = p.adjust(p.value, method = "BH")) |>
+  ungroup()
+```
+
+**3c. Identifying statistically significant genes**
+
+Identify genes with an adjusted p-value below 0.05.
+
+```{r}
+significant_all <- results_all |>
+  mutate(is_significant = case_when(
+    q.value < 0.05 ~ "Yes",
+    q.value >= 0.05 ~ "No",
+    TRUE ~ NA_character_
+  ))
+```
+
+**3d. Classifying gene regulation**
+
+We classify the direction and magnitude of the expression changes using the same effect-size thresholds as the reference study:
+
+- Estimate greater than 1: upregulated.
+
+- Estimate below -1: downregulated.
+
+- Values in between: not strongly regulated.
+
+We also change the stimulus names by removing the stimulus prefix.
+
+```{r}
+significant_all <- significant_all |>
+  mutate(regulation = case_when(
+    estimate > 1 ~ "upregulated",
+    estimate < -1 ~ "downregulated",
+    TRUE ~ "not strongly regulated")) |>
+  rename(stimulus = term) |>
+  mutate(stimulus = str_remove(stimulus, "stimulus"))
+```
+
+Retain only statistically significant genes and keep only the columns needed for the subsequent analyses.
+
+```{r}
+significant_all <- significant_all |>
+  filter(is_significant == "Yes") |>
+  select (gene_id, stimulus, time, regulation, estimate) 
+```
+
+At this point, we only have upregulated and downregulated significative genes:
+
+```{r}
+head(significant_all, n=10)
+```
+
+## 4. Exploring the individual fungal responses
+
+We now want to investigate whether the baseline expression of a gene under control conditions is related to its estimated response to fungal stimulation.
+
+First, we calculate the mean expression of each gene in the control samples, separately for each time point.
+
+```{r}
+control_means <- expression_data |>
+  filter(stimulus == "Control_group") |>
+  group_by(gene_id, time) |>
+  summarise(
+    control_expression = mean(expression)) |>
+  ungroup()
+```
+
+Then we combine the control expression values with the estimated effects obtained from the linear models.
+
+```{r}
+scatter_data <- significant_all |>
+  left_join(
+    control_means,
+    by = c("gene_id", "time")
+  )
+```
+
+**4a. Plotting baseline expression against estimated effect size**
+
+We can now plot the scatter plot, which will answer: " Is the gene's baseline expression level related to its response to fungal stimulation?"
+
+```{r}
+scatter_data <- scatter_data |>
+  mutate(time = factor(time, levels = c("4h", "24h")))
+ggplot(
+  scatter_data,
+  aes(
+    x = control_expression,
+    y = estimate,
+    color = stimulus
+  )
+) +
+  geom_point(alpha = 0.5) +
+  facet_wrap(~ time) +
+  labs(
+    title = "Control expression vs estimated effect size",
+    x = "Mean control expression (log2 CPM)",
+    y = "Estimated expression change",
+    color = "Fungus"
+  ) +
+  theme_minimal()
+ggsave(filename = "scatplot_baseexpr_vs_estsize.png", path = "../results")
+```
+
+Each point represents one gene-fungus comparison at one time point.
+
+Points above zero indicate genes with higher estimated expression following fungal stimulation than under control conditions, while points below zero indicate genes with lower estimated expression following fungal stimulation than under control conditions.
+
+In particular:
+
+- X-axis: mean expression under control conditions ("How much the gene was expressed under control conditions?").
+
+- Y-axis: estimated expression change following fungal stimulation ("How much the gene expression changed following fungal stimulation?")
+
+- Positive estimates indicate increased expression relative to control.
+
+- Negative estimates indicate decreased expression relative to control.
+
+**Interpretation:**
+
+From the scatter plot, we can see a clear wedge shape at both 4h and 24h: genes with lower baseline expression in the control group show much bigger changes when stimulated, while highly expressed genes stay pretty close to zero. There is also an empty white gap right around zero, which makes sense because we filtered the data to only include statistically significant genes.
+
+When comparing the different fungi, *C. albicans* (green) mostly drives strong upregulation that gets even stronger after 24 hours. On the other hand, *R. oryzae* (blue) stands out for downregulating genes, where the biggest drops happen in genes with medium baseline expression before leveling back out at higher expression levels. Finally, *A. fumigatus* (red) has way fewer points on the plot, suggesting it triggers a much smaller response compared to the other two fungi. In general, we can confirm that transcriptional responses differ between fungal species.
+
+**4b. Comparing the distribution of effect sizes**
+
+We also want to compare the distribution of estimated expression changes between the three fungal stimuli at each time point. Here we are answering: "How are the estimated expression changes distributed among statistically significant genes, and how do these distributions differ between fungal species?"
+
+The density curves show how the estimated effect sizes are distributed among statistically significant genes:
+
+```{r}
+significant_all <- significant_all |>
+  mutate(time = factor(time, levels = c("4h", "24h")))
+ggplot(significant_all, aes(
+  x = estimate,
+  fill = stimulus,
+  color = stimulus)) +
+  geom_density(alpha = 0.25) +
+  facet_wrap(~ time) +
+  labs(
+    title = "Distribution of effect sizes for statistically significant genes",
+    x = "Estimated expression change",
+    y = "Density",
+    fill = "Fungus",
+    color = "Fungus"
+  ) +
+  theme_minimal()
+ggsave(filename = "density_plot_estimated_effect_size.png", path = "../results")
+```
+
+In the plot, positive values represent increased expression relative to the control, whereas negative values represent decreased expression. The position and shape of each density curve indicate whether the estimated effects are predominantly positive or negative, and whether they are concentrated around a particular effect size or spread across a wider range.
+
+**Interpretation**
+
+The density plots show that each fungus has a pretty distinct transcriptional signature. For example, for *A. fumigatus*, there's a noticeable shift over time: at 4h its significant genes are tightly grouped around -0.5 (log2 fold change), but by 24h the distribution flattens a bit out and moves toward positive effect sizes with a small peak around +1. On the other hand, *C. albicans* and *R. oryzae* look pretty stable between the two time points, just spreading out slightly without changing their overall shape.
+
+**4c. Comparing the proportions of upregulated and downregulated genes**
+
+We also want to compare the relative contribution of each fungal stimulus to the number of significantly upregulated and downregulated genes.
+
+First, we count the distinct genes in each combination of time point, regulation direction and fungal stimulus. Genes classified as not strongly regulated are excluded.
+
+```{r}
+gene_counts <- significant_all |>
+  filter(regulation != "not strongly regulated") |> 
+  group_by(time, regulation, stimulus) |>
+  summarise(
+  n_genes = n_distinct(gene_id)) |>
+  ungroup()
+gene_counts 
+```
+
+And then we can create the stacked bar plot:
+
+```{r}
+gene_counts <- gene_counts |>
+  mutate(time = factor(time, levels = c("4h", "24h")))
+ggplot(gene_counts,
+       aes(
+         x = time,
+         y = n_genes,
+         fill = stimulus)) +
+  geom_col(position = "fill", width = 0.7) +
+  geom_text(
+    aes(label = n_genes),
+    position = position_fill(vjust = 0.5),
+    color = "black"
+  ) +
+  facet_wrap(~ regulation) +
+  labs(
+    title = "Distribution of significantly regulated genes",
+    x = NULL,
+    y = "Proportion of genes",
+    fill = "Fungus"
+  ) +
+  scale_y_continuous(labels = scales::percent) +
+  theme_minimal()
+ggsave(filename = "stacked_bar_gene_per_fungi.png", path = "../results")
+```
+
+In it, each bar represents 100% of the significantly regulated genes for each time point and regulation category (upregulated or downregulated) and the different colours show the proportion of genes associated with each fungal stimulus. We added the numbers inside the bars to indicate the actual number of genes for each stimulus, making it possible to compare both the relative proportions and the total number of genes.
+
+In general from this graph, it clearly appears how many more genes showed a significant expression change following *R. oryzae* stimulation compared to the other fungi, with the exception of the upregulated genes at 24h, for which *C. albicans* seems to induce an higher expression.
+
+## 5. Identifying genes shared by all three fungi
+
+We want to identify genes that are significantly regulated in the same direction by all three fungal stimuli at a given time point, similarly to what appears in the paper.
+
+For this part of the analysis we retain only upregulated and downregulated genes, then group the results by gene, time point and regulation direction. A gene is considered shared when it appears in all three fungal conditions:
+
+```{r}
+shared_genes <- significant_all |>
+  filter(regulation != "not strongly regulated") |>
+  group_by(gene_id, time, regulation) |>
+  filter(n_distinct(stimulus) == 3) |>
+  ungroup()
+shared_genes
+```
+
+**5a. Counting shared genes**
+
+We count the number of genes commonly upregulated or downregulated by all three fungi at each time point.
+
+```{r}
+shared_counts <- shared_genes |>
+  group_by(time, regulation) |>
+  summarise(
+    n_genes = n_distinct(gene_id)) |>
+  ungroup()
+```
+
+So that in becomes possible to visualise the number of shared upregulated and downregulated genes at 4h and 24h:
+
+```{r}
+ggplot(
+  shared_counts,
+  aes(
+    x = time,
+    y = n_genes,
+    fill = regulation
+  )
+) +
+  geom_col(position = "dodge", width = 0.65) +
+  ylim(0, 25) +
+  geom_text(
+    aes(label = n_genes),
+    position = position_dodge(width = 0.65),
+    vjust = -0.5
+  ) +
+  scale_x_discrete(limits = c("4h", "24h")) +
+  labs(
+    title = "Common transcriptional response to all three fungi",
+    subtitle = "Genes regulated in the same direction by all fungi",
+    x = "Time point",
+    y = "Number of shared genes",
+    fill = "Regulation"
+  ) +
+  theme_minimal()
+ggsave(filename = "common_response.png", path = "../results")
+```
+
+**5b. Comparing shared genes between time points**
+
+Similarly to the paper, we tried to determine whether the genes commonly regulated by all three fungi at 4h are also commonly regulated at 24h.
+
+First, we extract the unique genes at each time point, regardless of their regulation.
+
+```{r}
+genes_4h <- shared_genes |>
+  filter(time == "4h") |>
+  distinct(gene_id)
+
+genes_24h <- shared_genes |>
+  filter(time == "24h") |>
+  distinct(gene_id)
+```
+
+Then we can use an inner join to identify genes present at both time points, and anti-joins to identify genes found at only one time point.
+
+```{r}
+common_genes <- inner_join(
+  genes_4h,
+  genes_24h,
+  by = "gene_id"
+)
+
+only_4h <- anti_join(
+  genes_4h,
+  genes_24h,
+  by = "gene_id"
+)
+
+only_24h <- anti_join(
+  genes_24h,
+  genes_4h,
+  by = "gene_id"
+)
+```
+
+We can finally combine the common and distinct gene into one table showing how many genes are actually unique to 4h and to 24h, or shared between both time points.
+
+```{r}
+time_overlap <- bind_rows(
+  only_4h |>
+    summarise(n_genes = n()) |>
+    mutate(category = "4h only"),
+  
+  common_genes |>
+    summarise(n_genes = n()) |>
+    mutate(category = "Both time points"),
+  
+  only_24h |>
+    summarise(n_genes = n()) |>
+    mutate(category = "24h only")
+)
+time_overlap
+```
+
+We plotted these results in a simple bar plot:
+
+```{r}
+time_overlap <- time_overlap |>
+  mutate(category = factor(category, levels = c("4h only", "24h only", "Both time points")))
+ggplot(time_overlap, aes(x = category, y = n_genes, fill = category)) +
+  geom_col(width = 0.7) +
+  ylim(0,40) +
+  geom_text(aes(label = n_genes), vjust = -0.5) +
+  labs(
+    title = "Overlap of commonly regulated genes between time points",
+    x = NULL,
+    y = "Number of genes"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+ggsave(filename = "time_overlap.png", path = "../results")
+```
+
+## 6. Volcano plot of the shared genes
+
+As an extra analysis, we also decided to visualise the estimated expression changes and adjusted p-values of genes shared upregulated or downregulated by all three fungi in a volcano plot.
+
+We first retrieve the adjusted p-values from the original model results and combine them with the shared-gene information
+
+```{r}
+volcano_data <- shared_genes |>
+  left_join(
+    results_all |>
+      rename(stimulus = term) |>
+      mutate(stimulus = str_remove(stimulus, "stimulus")) |>
+      select(gene_id, time, stimulus, p.value, q.value),
+    by = c(
+      "gene_id",
+      "time",
+      "stimulus"
+    )
+  )
+volcano_data
+```
+
+Finally, we can create a volcano plot in which each point represents one shared gene in one fungal condition at one time point:
+
+```{r}
+ggplot(
+  volcano_data,
+  aes(
+    x = estimate,
+    y = -log10(q.value),
+    color = regulation,
+    label = gene_id
+  )
+) +
+  geom_point(size = 2, alpha = 0.7) +
+  facet_grid(time ~ stimulus) +
+  scale_color_manual(
+    values = c(
+      "upregulated" = "forestgreen",
+      "downregulated" = "blue"
+    )
+  ) +
+  labs(
+    title = "Volcano plot of the common transcriptional response",
+    subtitle = "Genes significantly regulated in the same direction by all three fungi",
+    x = "Estimated expression change",
+    y = "-log10(adjusted p-value)",
+    color = "Regulation"
+  ) +
+  theme_minimal()
+```

@@ -1,0 +1,539 @@
+---
+title: "analysis_greta"
+format: html
+editor: visual
+---
+
+```{r}
+#|echo: False
+#|eval: False
+library(tidyverse)
+library(readr)
+```
+
+# Retrieve and load dataset into one location
+
+Load metadata and mRNA counts
+
+```{r}
+#|echo: False
+#|eval: False
+metadata <- read_csv("../data/metadata.csv")
+counts <- read_csv("../data/counts.csv")
+```
+
+3a. Normalising and transforming the counts
+
+Convert raw counts into a normalised expression measure that can be used for exploratory analysis.
+
+We use counts per million (CPM), followed by a log2 transformation. Adding 1 prevents taking the logarithm of zero.
+
+```{r}
+counts_log <- counts |>
+  mutate(across(
+      -gene_id,
+      ~ log2((.x / sum(.x)) * 1000000 + 1) #log2transformation of CPM
+    )
+  )
+```
+
+3b. Reshaping the expression table
+
+Each sample is currently represented by a separate column. We reshape the table into long format, so that each row represents the expression of one gene in one sample.
+
+```{r}
+counts_long <- counts_log |>
+  pivot_longer(
+    cols = -gene_id,
+    names_to = "sample_id",
+    values_to = "expression"
+  )
+```
+
+3c. Combining expression values with sample metadata
+
+```{r}
+expression_data <- counts_long |>
+  left_join(metadata, by = "sample_id")
+```
+
+
+# Analysis of Candida albicans versus control group
+
+## From the main datatable pulling only the data necesery for analysis:
+
+Filtering expression data based on fungi, control group and time
+
+#Table 1
+
+```{r}
+candida_4h <- expression_data |>
+  filter(
+    time == "4h",
+    stimulus %in% c("C_albicans", "Control_group")
+  )
+```
+
+#Table 2
+
+```{r}
+candida_24h <- expression_data |>
+  filter(
+    time == "24h",
+    stimulus %in% c("C_albicans", "Control_group")
+  )
+```
+
+## Inspecting the data:
+
+We have two tables with given dimensions.
+
+```{r}
+#check amount of rows and columns
+dim(candida_4h)
+dim(candida_24h)
+```
+```{r}
+summary(candida_4h)
+```
+```{r}
+summary(candida_24h)
+```
+
+Inspecting the experimental design in the filtered datasets
+
+```{r}
+# Count how many observations (samples) are present for each stimulus
+candida_4h |>
+  distinct(sample_id, stimulus) |>
+  count(stimulus)
+# Check that the number of genes is same between samples
+candida_4h |>
+  distinct(stimulus, sample_id, gene_id) |>
+  count(stimulus, sample_id, name = "number_of_genes")
+
+# Count samples for each donor and stimulus combination
+# Confirm that every donor has both Control_group and C_albicans
+candida_4h |>
+  distinct(sample_id, donor, stimulus) |>
+  count(donor, stimulus)
+```
+
+
+```{r}
+# Count how many observations (samples) are present for each stimulus
+candida_24h |>
+  distinct(sample_id, stimulus) |>
+  count(stimulus)
+# Check that the number of genes is same between samples
+candida_24h |>
+  distinct(stimulus, sample_id, gene_id) |>
+  count(stimulus, sample_id, name = "number_of_genes")
+
+# Count samples for each donor and stimulus combination
+# Confirm that every donor has both Control_group and C_albicans
+candida_24h |>
+  distinct(sample_id, donor, stimulus) |>
+  count(donor, stimulus)
+```
+
+## Preparing data for linear modeling:
+
+```{r}
+# Prepare variables for linear modelling stimulus - factor also control group as referance, donor as factor.
+
+candida_4h <- candida_4h |>
+  mutate(
+    stimulus = factor(stimulus),
+    stimulus = relevel(stimulus, ref = "Control_group"),
+    donor = factor(donor)
+  )
+```
+
+```{r}
+candida_24h <- candida_24h |>
+  mutate(
+    stimulus = factor(stimulus),
+    stimulus = relevel(stimulus, ref = "Control_group"),
+    donor = factor(donor)
+  )
+```
+
+Grouping data by gene_id:
+
+```{r}
+
+candida_4h_grouped <- candida_4h |>
+  group_by(gene_id)
+candida_4h_grouped
+```
+
+```{r}
+candida_24h_grouped <- candida_24h |>
+  group_by(gene_id)
+candida_24h_grouped
+```
+
+
+
+### Using linear model with purr
+
+```{r}
+# Split the grouped data into separate tables, one per gene
+
+candida_4h_split <- candida_4h_grouped |>
+  group_split()
+
+#amount of tbles created:
+length(candida_4h_split)
+
+```
+
+```{r}
+# Split the grouped data into separate tables, one per gene
+
+candida_24h_split <- candida_24h_grouped |>
+  group_split()
+
+#amount of tbles created:
+length(candida_24h_split)
+```
+
+
+
+```{r}
+# Inspect the first gene table
+candida_4h_split[[1]]
+```
+
+```{r}
+# Inspect the first gene table
+candida_24h_split[[1]]
+```
+
+
+### Fit a linear model for the first gene
+
+```{r}
+
+model_test <- lm(
+  expression ~ donor + stimulus,
+  data = candida_4h_split[[1]]
+)
+
+# Inspect the model results
+summary(model_test)
+```
+- donorB, donorC, etc. represent differences between donors and the reference donor (donor A).
+- (Intercept) represents the estimated expression for the reference donor under the control condition.
+- stimulusC_albicans represents the condition difference after accounting for donor.
+We only need the stimulus coefficient for our differential-expression results.
+
+### Collect results
+```{r}
+results <- summary(model_test)$coefficients |>
+  as.data.frame() |>
+  rownames_to_column("term") |>
+  filter(term == "stimulusC_albicans") |>
+  select(Estimate, `Pr(>|t|)`) |>
+  mutate(gene_id = first(candida_4h_split[[1]]$gene_id), .before = 1) |>
+  rename(
+    log2FC = Estimate,
+    p_value = `Pr(>|t|)`
+  )
+
+results
+```
+### Repeat for every single gene using purr:
+
+#### For 4 h data:
+
+```{r}
+results_4h <- purrr::map_dfr(candida_4h_split, function(gene_data) {
+
+  model <- lm(
+    expression ~ donor + stimulus,
+    data = gene_data
+  )
+
+  summary(model)$coefficients |>
+    as.data.frame() |>
+    rownames_to_column("term") |>
+    filter(term == "stimulusC_albicans") |>
+    select(Estimate, `Pr(>|t|)`) |>
+    mutate(gene_id = first(gene_data$gene_id), .before = 1) |>
+    rename(
+      log2FC = Estimate,
+      p_value = `Pr(>|t|)`
+    )
+
+})
+
+```
+
+```{r}
+dim(results_4h)
+head(results_4h)
+```
+
+#### For 24 h data:
+
+```{r}
+results_24h <- purrr::map_dfr(candida_24h_split, function(gene_data) {
+
+  model <- lm(
+    expression ~ donor + stimulus,
+    data = gene_data
+  )
+
+  summary(model)$coefficients |>
+    as.data.frame() |>
+    rownames_to_column("term") |>
+    filter(term == "stimulusC_albicans") |>
+    select(Estimate, `Pr(>|t|)`) |>
+    mutate(gene_id = first(gene_data$gene_id), .before = 1) |>
+    rename(
+      log2FC = Estimate,
+      p_value = `Pr(>|t|)`
+    )
+
+})
+```
+
+```{r}
+dim(results_24h)
+head(results_24h)
+```
+
+
+### Performing BH adjusment:
+
+We need it since we are testing multiple genes separately, some genes will appear statistically significant just by chance, even if there is no real difference between Candida and control. For example, if all genes had no real effect, using a 0.05 threshold across 61,893 tests could produce roughly 3,095 apparently significant results by chance. BH adjustment corrects for this multiple-testing problem. It controls the false discovery rate (FDR): the expected proportion of false positives among the genes we identify as significant. It does not eliminate all false positives, but it makes our conclusions more reliable.
+
+#### For 4 h data:
+
+```{r}
+results_4h <- results_4h |>
+  mutate(
+    adjusted_p_value = p.adjust(p_value, method = "BH")
+  )
+```
+
+Then, when identifying significant genes, use the adjusted p-value and identify significance as per articles treshold:
+
+```{r}
+results_4h <- results_4h |>
+  mutate(
+    regulation = case_when(
+      adjusted_p_value < 0.05 & log2FC > 1 ~ "Upregulated",
+      adjusted_p_value < 0.05 & log2FC < -1 ~ "Downregulated",
+      TRUE ~ "Not significant"
+    )
+  )
+```
+
+### Data from the artickle 4 h: 
+
+Transcripts that exhibited a Log2fold change >1 or <−1 compared to unstimulated PBMCs and an adjusted p-value of < 0.05 were considered differentially regulated.
+
+C. albicans differentially regulated 1055 transcripts at 4 h:
+
+Downregulated: 234
+Upregulated: 821 
+
+### My results 4 h vs artickle: 
+
+```{r}
+results_4h_vs_artickle <- results_4h |>
+  count(regulation, name = "Current_analysis_results")
+
+results_4h_vs_artickle <- results_4h_vs_artickle |>
+  mutate (Artickle_analysis_result = c(234, NA, 821))
+
+results_4h_vs_artickle
+```
+
+#### For 24 h data:
+
+```{r}
+results_24h <- results_24h |>
+  mutate(
+    adjusted_p_value = p.adjust(p_value, method = "BH")
+  )
+```
+
+Then, when identifying significant genes, use the adjusted p-value and identify significance as per articles treshold:
+
+```{r}
+results_24h <- results_24h |>
+  mutate(
+    regulation = case_when(
+      adjusted_p_value < 0.05 & log2FC > 1 ~ "Upregulated",
+      adjusted_p_value < 0.05 & log2FC < -1 ~ "Downregulated",
+      TRUE ~ "Not significant"
+    )
+  )
+```
+
+
+### Data from the artickle 24 h: 
+
+Transcripts that exhibited a Log2fold change >1 or <−1 compared to unstimulated PBMCs and an adjusted p-value of < 0.05 were considered differentially regulated.
+
+C. albicans differentially regulated 1055 transcripts at 24 h:
+
+Downregulated: 715
+Upregulated:  1733
+
+
+### My results 24 h:
+
+```{r}
+results_24h_vs_artickle <- results_24h |>
+  count(regulation, name = "Current_analysis_results")
+
+results_24h_vs_artickle <- results_24h_vs_artickle |>
+  mutate (Artickle_analysis_result = c(715, NA, 1733))
+
+results_24h_vs_artickle
+```
+
+## For further analysis 4 genes conected with Cytokine response in fungi were chosen. IL1B, TNF, CXCL8, IL6 
+
+```{r}
+#Adding a column to name genes them
+results_4h <- results_4h |>
+  mutate(
+    gene_name = case_when(
+      gene_id == "ENSG00000125538" ~ "IL1B",   #Interleukin beta
+      gene_id == "ENSG00000232810" ~ "TNF",    #Tumor necrosis factor
+      gene_id == "ENSG00000169429" ~ "CXCL8",  #Interleukin-8 (IL-8)
+      gene_id == "ENSG00000136244" ~ "IL6",    #Interleukin-6
+      TRUE ~ NA_character_
+    )
+  )
+
+```
+
+```{r}
+#Adding a column to name genes them
+results_24h <- results_24h |>
+  mutate(
+    gene_name = case_when(
+      gene_id == "ENSG00000125538" ~ "IL1B",   #Interleukin beta
+      gene_id == "ENSG00000232810" ~ "TNF",    #Tumor necrosis factor
+      gene_id == "ENSG00000169429" ~ "CXCL8",  #Interleukin-8 (IL-8)
+      gene_id == "ENSG00000136244" ~ "IL6",    #Interleukin-6
+      TRUE ~ NA_character_
+    )
+  )
+```
+
+
+```{r}
+genes_to_highlight <- c("IL1B", "TNF", "CXCL8", "IL6")
+```
+
+
+#VULCANO PLOT 4 H
+
+```{r}
+ggplot(results_4h,
+       aes(x = log2FC, y = -log10(adjusted_p_value),
+           color = regulation)) +
+  geom_point(alpha = 0.5, size = 1) +
+  scale_color_manual(values = c(
+    "Upregulated" = "red",
+    "Downregulated" = "blue",
+    "Not significant" = "grey"
+  )) +
+  geom_point(
+    data = results_4h |> 
+      filter(gene_name %in% genes_to_highlight),
+    aes(x = log2FC, y = -log10(adjusted_p_value)),
+    fill = "yellow",
+    colour = "black",
+    shape = 21,
+    size = 2.5,
+    stroke = 0.8
+  ) +
+  geom_text(
+    data = results_4h |>
+      filter(gene_name %in% genes_to_highlight),
+    aes (label = gene_name),
+    vjust = -1,
+    size = 3
+  ) +
+  geom_vline(xintercept = c(-1, 1), linetype = "dashed") +
+  geom_hline(yintercept = -log10(0.05), linetype = "dashed") +
+  labs(
+    title = "Volcano plot: C. albicans vs Control (4h)",
+    x = "log2 Fold Change",
+    y = "-log10 Adjusted p-value",
+    color = "Regulation"
+  ) +
+  theme_minimal()
+```
+#VULCANO PLOT 24 H
+
+```{r}
+ggplot(results_24h,
+       aes(x = log2FC, y = -log10(adjusted_p_value),
+           color = regulation)) +
+  geom_point(alpha = 0.5, size = 1) +
+  scale_color_manual(values = c(
+    "Upregulated" = "red",
+    "Downregulated" = "blue",
+    "Not significant" = "grey"
+  )) +
+  geom_point(
+    data = results_24h |> 
+      filter(gene_name %in% genes_to_highlight),
+    aes(x = log2FC, y = -log10(adjusted_p_value)),
+    fill = "yellow",
+    colour = "black",
+    shape = 21,
+    size = 2.5,
+    stroke = 0.8
+  ) +
+  geom_text(
+    data = results_24h |>
+      filter(gene_name %in% genes_to_highlight),
+    aes (label = gene_name),
+    vjust = -1,
+    size = 3
+  ) +
+  geom_vline(xintercept = c(-1, 1), linetype = "dashed") +
+  geom_hline(yintercept = -log10(0.05), linetype = "dashed") +
+  labs(
+    title = "Volcano plot: C. albicans vs Control (24h)",
+    x = "log2 Fold Change",
+    y = "-log10 Adjusted p-value",
+    color = "Regulation"
+  ) +
+  theme_minimal()
+```
+# Workflow and conclusion:
+
+Workflow: 
+
+Select samples – Separate 4-hour and 24-hour Candida and control samples.
+
+Fit linear models – Fit one model per gene, accounting for donor pairing.
+
+Extract results – Obtain log2FC estimates and p-values for each gene.
+
+Correct for multiple testing – Apply Benjamini–Hochberg adjustment.
+
+Classify genes – Identify upregulated, downregulated and non-significant genes using the fold-change and adjusted p-value thresholds.
+
+Visualise results – Create volcano plots to display differential gene expression
+
+Conclusion:
+
+The results gained from the analysis differ from the results obtained by the authors of the article "Comparative host transcriptome in response to pathogenic fungi identifies common and species-specific transcriptional antifungal host response pathways". 
+I was able to recreate a similar volcano plot, however since the analysis was performed without using the refereed library -  DE seq. The resulting calculation of significant up regulated and down regulated genes at both time points 4 h and 24 h as expected are different.  
+
+
+
+

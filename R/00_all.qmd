@@ -1,0 +1,39 @@
+---
+title: "Full_project"
+format: html
+---
+
+```{r}
+library(tidyverse)
+library(broom)
+library(purrr)
+library(ggrepel)
+```
+
+```{r}
+# run downloading and loading of data
+quarto::quarto_render("01_load.qmd")
+
+# run cleaning operations
+quarto::quarto_render("02_clean.qmd")
+
+# run augment implementation
+quarto::quarto_render("03_augment_general.qmd")
+
+# run individual analyses
+quarto::quarto_render("analysis_greta.qmd")
+quarto::quarto_render("Analysis_Martina.qmd")
+quarto::quarto_render("Analysis_Swastika.qmd")
+quarto::quarto_render("Analysis_Anastasia.qmd")
+quarto::quarto_render("Analysis_Teo.qmd")
+```
+
+1.  General
+
+2.  Martina
+
+3.  Anastasia
+
+4.  Greta
+
+5.  Teo
