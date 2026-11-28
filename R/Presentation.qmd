@@ -25,7 +25,8 @@ format:
 editor: visual
 ---
 
-## Background {.smaller}
+## Background {footer=false}
+
 
 Three important human fungal pathogens:
 
@@ -39,7 +40,7 @@ Different fungi may activate different host defence mechanisms.
 About 1 minute. Set the scene: three fungi, and the question of whether the immune system responds to each one in the same way.
 :::
 
-## Aim and research questions {.smaller}
+## Aim and research questions {footer=false}
 
 **Aim:** compare host gene expression responses to three fungal pathogens and identify shared antifungal responses, species-specific responses and time-dependent changes.
 
@@ -53,7 +54,7 @@ About 1 minute. Set the scene: three fungi, and the question of whether the immu
 About 1 minute. Read out the three research questions. The rest of the talk follows the team's analyses.
 :::
 
-## For Teo: descriptive and summary statistics {.smaller}
+## For Teo: descriptive and summary statistics {footer=false}
 
 *Placeholder. Teo to add 1 to 3 slides here.*
 
@@ -65,7 +66,7 @@ About 1 minute. Read out the three research questions. The rest of the talk foll
 Teo: replace this slide with your descriptive and statistics content. Keep it to 1 to 3 slides, and reduce the deck to 10 slides in total if you add more.
 :::
 
-## Individual gene expression responses
+## Individual gene expression responses {footer=false}
 
 ::::: columns
 ::: {.column width="50%"}
@@ -91,9 +92,10 @@ knitr::include_graphics("../results/stacked_bar_gene_per_fungi.png")
 - Significant genes: BH-adjusted q-value \< 0.05. Upregulated and downregulated genes have estimated effects above 1 or below -1.
 - *R. oryzae* accounts for about 92% of downregulated genes at 4h and 89% at 24h
 - The upregulated side changes over time: *R. oryzae* gives 66% of upregulated genes at 4h, but *C. albicans* gives 58% at 24h.
+
 :::
 
-## Shared transcriptional responses across fungi
+## Shared transcriptional responses across fungi {footer=false}
 
 Genes regulated in the same direction by all three fungi,<br> separately at each time point
 
@@ -119,12 +121,12 @@ knitr::include_graphics("../results/time_overlap.png")
 
 ::: {style="font-size: 0.75em;"}
 - The early shared response is mostly upregulation, which fits a rapid, general activation of host defence.
-- The late shared response flips to mostly downregulation <br>\
+- The late shared response flips to mostly downregulation.
 - Only 37 shared genes are specific to 4h and 12 to 24h, and none persist at both time points.
 - The shared response is not stable.
 :::
 
-## Greta: *C. albicans* against control {.smaller}
+## Greta: *C. albicans* against control {footer=false}
 
 ::::: columns
 ::: {.column width="48%"}
@@ -147,7 +149,7 @@ knitr::include_graphics("../results/time_overlap.png")
 About 1.5 minutes. Greta's analysis, analysis_greta.qmd. Our counts come from her per-gene models. The article counts are the ones she recorded from the paper. Her 24 h article total is recorded there as "1055" in one line, which looks like a copy error. The table uses the article's 24 h values, 1733 up and 715 down.
 :::
 
-## Swastika: placeholder {.smaller}
+## Swastika: placeholder {footer=false}
 
 *Placeholder. Swastika's analysis is not in the repository yet.*
 
@@ -159,7 +161,7 @@ About 1.5 minutes. Greta's analysis, analysis_greta.qmd. Our counts come from he
 Swastika: add your analysis here once it is pushed to the R folder of the repository.
 :::
 
-## Anastasia: placeholder {.smaller}
+## Anastasia: placeholder {footer=false}
 
 *Placeholder. Anastasia's analysis is not in the repository yet.*
 
@@ -171,7 +173,7 @@ Swastika: add your analysis here once it is pushed to the R folder of the reposi
 Anastasia: add your analysis here once it is pushed to the R folder of the repository.
 :::
 
-## Conclusion and Discussion {.smaller}
+## Conclusion and Discussion {.smaller} 
 
 - 
 
