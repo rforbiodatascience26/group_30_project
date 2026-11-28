@@ -189,7 +189,16 @@ Swastika: add your analysis here once it is pushed to the R folder of the reposi
 Anastasia: add your analysis here once it is pushed to the R folder of the repository.
 :::
 
-## Conclusion {.smaller}
+## Conclusion and Discussion {.smaller}
+
+- 1. Different responses depending on the fungal species: The differences in the numbers and directions of regulated genes suggest that the three fungi trigger distinct host transcriptional responses.
+- 2. Changes over time: The stronger upregulation observed for C. albicans at 24 h, together with the lower number of shared genes at 24 h, suggests that the transcriptional response may change over time.
+- 3. The absence of genes shared at both 4h and 24h suggests that the common response across the three fungi is time-dependent. 
+  Some limitations we faced:
+  - The analysis uses log2-transformed CPM values and linear models rather than a dedicated RNA-seq differential expression method such as DESeq2.
+  - Donor differences were included in the model, but interactions between donor and fungal stimulus were not investigated.
+  - The number of significant genes depends on the selected adjusted p-value threshold (q-value below 0.05) and effect-size thresholds (above 1 or below -1).
+
 
 - *R. oryzae* gives the strongest transcriptional response in these analyses, mostly as downregulation
 - A set of 49 genes is shared by all three fungi, mostly at 4 h
