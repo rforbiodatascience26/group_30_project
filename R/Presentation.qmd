@@ -2,7 +2,7 @@
 title: "Human Immune Transcriptional Responses to Pathogenic Fungi"
 subtitle: "Analysis of human gene expression profiles following fungal infection using published count data (GSE162746)"
 author: "Group 30: Anastasia Baltzi, Greta, Martina Ippolito, Swastika, Teo"
-date: "22160 R for Bio Data Science · Technical University of Denmark"
+footer: "22160 R for Bio Data Science - Technical University of Denmark"
 execute:
   echo: false
 format:
@@ -11,6 +11,7 @@ format:
     embed-resources: true
     slide-number: true
     transition: fade
+    logo: ../doc/Corp_Red_RGB.png
 
     incremental: false
     include-in-header:
@@ -64,84 +65,64 @@ About 1 minute. Read out the three research questions. The rest of the talk foll
 Teo: replace this slide with your descriptive and statistics content. Keep it to 1 to 3 slides, and reduce the deck to 10 slides in total if you add more.
 :::
 
-
 ## Individual gene expression responses
 
-:::: {.columns}
-
+::::: columns
 ::: {.column width="50%"}
-
 ```{r}
 #| echo: false
 #| out-width: "100%"
 
 knitr::include_graphics("../results/scatplot_baseexpr_vs_estsize.png")
 ```
-
 :::
 
 ::: {.column width="50%"}
-
 ```{r}
 #| echo: false
 #| out-width: "100%"
 
 knitr::include_graphics("../results/stacked_bar_gene_per_fungi.png")
 ```
-
 :::
+:::::
 
-::::
-
-<div style="font-size: 0.75em;">
-
-- Significant genes: BH-adjusted q-value < 0.05. Upregulated and downregulated genes have estimated effects above 1 or below -1.
+::: {style="font-size: 0.75em;"}
+- Significant genes: BH-adjusted q-value \< 0.05. Upregulated and downregulated genes have estimated effects above 1 or below -1.
 - *R. oryzae* accounts for about 92% of downregulated genes at 4h and 89% at 24h
 - The upregulated side changes over time: *R. oryzae* gives 66% of upregulated genes at 4h, but *C. albicans* gives 58% at 24h.
-
-
-</div>
+:::
 
 ## Shared transcriptional responses across fungi
 
 Genes regulated in the same direction by all three fungi,<br> separately at each time point
 
-:::: {.columns}
-
+::::: columns
 ::: {.column width="50%"}
-
 ```{r}
 #| echo: false
 #| out-width: "100%"
 
 knitr::include_graphics("../results/common_response.png")
 ```
-
 :::
 
 ::: {.column width="50%"}
-
 ```{r}
 #| echo: false
 #| out-width: "100%"
 
 knitr::include_graphics("../results/time_overlap.png")
 ```
-
 :::
+:::::
 
-::::
-
-<div style="font-size: 0.75em;">
-
+::: {style="font-size: 0.75em;"}
 - The early shared response is mostly upregulation, which fits a rapid, general activation of host defence.
-- The late shared response flips to mostly downregulation <br>  
-- Only 37 shared genes are specific to 4h and 12 to 24h, and none persist at both time points. 
+- The late shared response flips to mostly downregulation <br>\
+- Only 37 shared genes are specific to 4h and 12 to 24h, and none persist at both time points.
 - The shared response is not stable.
-
-</div>
-
-
+:::
 
 ## Greta: *C. albicans* against control {.smaller}
 
@@ -192,18 +173,28 @@ Anastasia: add your analysis here once it is pushed to the R folder of the repos
 
 ## Conclusion and Discussion {.smaller}
 
-- 1. Different responses depending on the fungal species: The differences in the numbers and directions of regulated genes suggest that the three fungi trigger distinct host transcriptional responses.
-- 2. Changes over time: The stronger upregulation observed for C. albicans at 24 h, together with the lower number of shared genes at 24 h, suggests that the transcriptional response may change over time.
-- 3. The absence of genes shared at both 4h and 24h suggests that the common response across the three fungi is time-dependent. 
-  Some limitations we faced:
+- 
+
+  1.  Different responses depending on the fungal species: The differences in the numbers and directions of regulated genes suggest that the three fungi trigger distinct host transcriptional responses.
+
+- 
+
+  2.  Changes over time: The stronger upregulation observed for C. albicans at 24 h, together with the lower number of shared genes at 24 h, suggests that the transcriptional response may change over time.
+
+- 
+
+  3.  The absence of genes shared at both 4h and 24h suggests that the common response across the three fungi is time-dependent. Some limitations we faced:
+
   - The analysis uses log2-transformed CPM values and linear models rather than a dedicated RNA-seq differential expression method such as DESeq2.
   - Donor differences were included in the model, but interactions between donor and fungal stimulus were not investigated.
   - The number of significant genes depends on the selected adjusted p-value threshold (q-value below 0.05) and effect-size thresholds (above 1 or below -1).
 
-
 - *R. oryzae* gives the strongest transcriptional response in these analyses, mostly as downregulation
+
 - A set of 49 genes is shared by all three fungi, mostly at 4 h
+
 - *C. albicans* results look similar across Martina's and Greta's models, but are below the article's counts
+
 - Teo's statistics, and Swastika's and Anastasia's results, to be added
 
 **Questions?**
