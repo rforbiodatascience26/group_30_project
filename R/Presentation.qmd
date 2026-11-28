@@ -96,8 +96,8 @@ knitr::include_graphics("../results/stacked_bar_gene_per_fungi.png")
 <div style="font-size: 0.75em;">
 
 - Significant genes: BH-adjusted q-value < 0.05. Upregulated and downregulated genes have estimated effects above 1 or below -1.
-- *R. oryzae* accounts for about 92% of downregulated genes at 4 h and 89% at 24 h, so most of the transcriptional shutdown is specific to this fungus.
-- The upregulated side changes over time: *R. oryzae* gives 66% of upregulated genes at 4 h, but *C. albicans* gives 58% at 24 h.
+- *R. oryzae* accounts for about 92% of downregulated genes at 4h and 89% at 24h
+- The upregulated side changes over time: *R. oryzae* gives 66% of upregulated genes at 4h, but *C. albicans* gives 58% at 24h.
 
 
 </div>
@@ -135,8 +135,9 @@ knitr::include_graphics("../results/time_overlap.png")
 <div style="font-size: 0.75em;">
 
 - The early shared response is mostly upregulation, which fits a rapid, general activation of host defence.
-- The late shared response flips to mostly downregulation, so the common programme changes character over time.
-- Only 37 shared genes are specific to 4 h and 12 to 24 h, and none persist at both time points. The fungi share a response, but not a stable one.
+- The late shared response flips to mostly downregulation <br>  
+- Only 37 shared genes are specific to 4h and 12 to 24h, and none persist at both time points. 
+- The shared response is not stable.
 
 </div>
 

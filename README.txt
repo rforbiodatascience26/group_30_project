@@ -7,7 +7,7 @@ Project Contributors:
 
 link to paper: https://spj.science.org/doi/10.1016/j.csbj.2020.12.036#sec-4
 link to dataset: https://ftp.ncbi.nlm.nih.gov/geo/series/GSE162nnn/GSE162746/suppl/
-link to presentation:
+link to presentation: https://github.com/rforbiodatascience26/group_30_project/tree/main/results
 
 Declaration of AI Use:
 
